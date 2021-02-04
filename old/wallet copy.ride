@@ -1,0 +1,279 @@
+{-# STDLIB_VERSION 4 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let NONE = "none"
+let BANNED = "banned" # do we need it?
+let ACTIVE = "active"
+let CLOSED = "closed"
+let OPEN = "open"
+let assetKey = "asset" 
+let devicePriceKey = "device_price"
+let deviceKeyPriceKey = "device_key_price"
+let minAmountToBeMemberKey = "member_amount"
+let actions = [OPEN, CLOSED]
+let deviceInitialCounter = 0
+
+################ utx etc
+
+  func getNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getStrByKey(key: String) = {
+    match getString(this,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+  func getExtNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getExtStrByKey(addr: Address, key: String) = {
+    match getString(addr,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+  func getAssetId()={
+    fromBase58String(getStrByKey(assetKey))
+  }
+################# dapp - user keys/values
+
+  func userStatusKey(addr:String)={
+    "user_"+addr
+  }
+
+  # values: "none", "active", "banned"
+  func userStatusValue(addr:String)={
+    match getString(this,userStatusKey(addr)){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+################# dapp - device keys/values
+
+  func deviceStatusKey(addr:String)={
+    "device_"+addr
+  }
+  func deviceActionCounterKey(addr:String)={
+    "device_counter_"+addr
+  }
+  # values: "none", "open", "closed"
+  func deviceStatusValue(addr:String)={
+    getStrByKey(deviceStatusKey(addr))
+  }
+  func deviceActionCounterValue(addr:String)={
+    getNumberByKey(deviceActionCounterKey(addr))
+  }
+
+################# dapp - device key/nft keys/values
+  func nftKey(nft:String)={
+    "key_"+nft
+  }
+
+  func nftValue(nft:String)={
+    getStrByKey(nftKey(nft))
+  }
+
+################# dapp - oracle keys/values
+
+  func oracleStatusKey(addr:String)={
+    "oracle_"+addr
+  }
+  # values: "none", "active", "banned"
+  func oracleStatusValue(addr:String)={
+    getStrByKey(oracleStatusKey(addr))
+  }
+
+################# device wallet - get owner
+
+  # values: "none", address
+  func getDeviceOwnerAddressValue(addr:Address)={
+    getExtStrByKey(addr, "owner")
+  }
+
+
+################# utx - checks
+
+  # checks for: 
+  # not allowed asset
+  # wrong amount
+  func priceIsWrong(i:Invocation, assetId:ByteVector, price: Int)={
+    if(i.payments.size() < 1) then throw("wrong payments count")
+    else if(i.payments[0].assetId != assetId) then throw("wrong asset, supported only xyz")
+    else if(i.payments[0].amount != price) then throw("wrong payment value, expected " + toString(price))
+    else false
+  }
+
+  # checks for:
+  # user not registered / banned
+  func userInactive(user:String)={
+    let userStatus = userStatusValue(user)
+    if (userStatus == NONE) then throw("user not registered")
+    else if (userStatus == BANNED) then throw("user banned")
+    else false
+  }
+
+  # checks for:
+  # not an owner of device
+  func notAnOwner(user:String, deviceAddr:String)={ 
+    let ownerAddress = getDeviceOwnerAddressValue(addressFromStringValue(deviceAddr))
+    if (ownerAddress != user) then throw("not an owner")
+    else false
+  }
+  
+  # checks if action is on predefined list
+  func notAllowedDeviceAction(action:String)={
+    match (actions.indexOf(action)){
+      case a:Int => false
+      case _ => true
+    }
+  }
+
+  # chacks if user has right amount of asset (+ asset to be transfered) to become a member
+  func userBecomesMember(user:String, assetId:ByteVector, amount:Int)={
+    let minMemberAmount = getNumberByKey(minAmountToBeMemberKey)
+    let currentBalance = assetBalance(addressFromStringValue(user), assetId)
+    currentBalance + amount >= minMemberAmount
+  }
+
+################ public functions
+
+@Verifier(tx)
+func verify() = {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+}
+
+###
+# IF amount of asset in user wallet + amount reported by oracle is >= membership amount
+# THEN write account address with status & transfer funds
+# - user_{address}: "active"
+# 
+# ELSE
+#
+# Just transfer funds if user already exists
+#
+# ################
+# other name propositions transfer/oracle/paymentCallback
+#
+# na raty
+#
+@Callable(i)
+func acceptPayment(addr: String, amount: Int) = { 
+  if (oracleStatusValue(toBase58String(i.caller.bytes)) == ACTIVE) then { # check if oracle is on whitelist
+    let walletAddress = addressFromStringValue(addr)
+    let userStatus = userStatusValue(addr)
+    let minAmount = 1 # min asset amount to process
+    let assetId = getAssetId()
+
+    if (amount < minAmount) then throw("asset amount is too low")
+    else if (userBecomesMember(addr,assetId,amount)) then { 
+      [StringEntry(userStatusKey(addr),ACTIVE),         # new user, write to data + transfer asset
+      ScriptTransfer(walletAddress, amount, assetId)]
+    } else { 
+      [ScriptTransfer(walletAddress, amount, assetId)] # just transfer asset, user may be banned
+    }
+  } else throw("forbidden") # not in oracle whitelist
+}
+
+###
+#
+# Write device entries:
+# - device_{address}: "closed"   # desired status of device
+# - device_counter_{address}: 0  # counter of status changes, triggers state change event from oracle
+#
+@Callable(i)
+func addDevice(deviceAddr: String) = {
+  let callerAddress = toBase58String(i.caller.bytes)
+  let price = getNumberByKey(devicePriceKey)
+  let assetId = getAssetId() # may be replaced later with const
+  
+  if (priceIsWrong(i, assetId, price)) then throw("price checks failed")
+  else if (userInactive(callerAddress)) then throw("user checks failed")
+  else if (notAnOwner(callerAddress, deviceAddr)) then throw("owner checks failed")
+  else if (deviceStatusValue(deviceAddr) != NONE ) then throw("device already added")
+  else {
+    [
+     StringEntry(deviceStatusKey(deviceAddr), CLOSED),
+     IntegerEntry(deviceActionCounterKey(deviceAddr), deviceInitialCounter)
+    ]
+  }
+}
+
+###
+#
+# Write key entry:
+# - key_{token_id}: "{device_address}"
+#
+@Callable(i)
+func addKey(deviceAddr: String, keyID: String) = {
+  let callerAddress = toBase58String(i.caller.bytes)
+  let price = getNumberByKey(deviceKeyPriceKey)
+  let assetId = getAssetId()
+  let keyIsNotNft = match assetInfo(fromBase58String(keyID)) {
+    case asset:Asset =>
+        asset.decimals != 0 || asset.reissuable == true || asset.quantity != 1
+    case _ => true
+  }
+
+  if (priceIsWrong(i, assetId, price)) then throw("price checks failed")
+  else if (userInactive(callerAddress)) then throw("user checks failed")
+  else if (notAnOwner(callerAddress, deviceAddr)) then throw("owner checks failed")
+  else if (deviceStatusValue(deviceAddr) == NONE ) then throw("device not yet added")
+  else if (nftValue(keyID) != NONE) then throw("this key is already assigned")
+  else if (keyIsNotNft) then throw("key is not nft")
+  else if (assetBalance(i.caller, fromBase58String(keyID)) < 1) then throw("key is not present in user wallet")
+  else{
+    [
+     StringEntry(nftKey(keyID), deviceAddr)
+    ]
+  }
+}
+
+###
+# 
+# Remove key entry
+# - key_{token_id}
+#
+@Callable(i)
+func removeKey(keyID: String) = {
+  let callerAddress = toBase58String(i.caller.bytes)
+  let deviceAddress = nftValue(keyID)
+
+  if (deviceAddress == NONE) then throw("key not registered")
+  else if (userInactive(callerAddress)) then throw("user checks failed")
+  else if (notAnOwner(callerAddress, deviceAddress)) then throw("owner checks failed")
+  else{
+    [
+     DeleteEntry(nftKey(keyID))
+    ]
+  }
+}
+
+###
+#
+# Updates device entries:
+# - device_{address}: action      # action to be made
+# - device_counter_{address} +1   # counter incremented with each action, change detected by oracle
+#
+@Callable(i)
+func deviceAction(keyID: String, action: String) = {
+  let hasNoKey = assetBalance(i.caller, fromBase58String(keyID)) < 1
+  let device = nftValue(keyID)
+
+  if (hasNoKey) then throw("key not owned")
+  else if (device == NONE) then throw("key not registered")
+  else if (notAllowedDeviceAction(action)) then throw("action is not allowed")
+  else {
+    [
+      StringEntry(deviceStatusKey(device), action),
+      IntegerEntry(deviceActionCounterKey(device), deviceActionCounterValue(device) + 1)
+    ]
+  }
+}

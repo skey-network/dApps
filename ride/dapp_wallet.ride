@@ -1,0 +1,288 @@
+{-# STDLIB_VERSION 4 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let NONE = "none"
+let BANNED = "banned" # do we need it?
+let ACTIVE = "active"
+let CLOSE = "close"
+let OPEN = "open"
+let assetKey = "asset"
+let keyPriceKey = "key_price"
+let ownerKey = "owner"
+let rechargeLimitKey = "recharge_limit"
+let actions = [OPEN, CLOSE]
+let deviceInitialCounter = 0
+#let KEY_DAPP=0 - use issuer
+let keyDevice = 0
+let keyValidUntil = 1
+
+
+################ utx etc
+
+  func getNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getStrByKey(key: String) = {
+    match getString(this,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+  func getExtNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getExtStrByKey(addr: Address, key: String) = {
+    match getString(addr,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+  func getAssetId()={
+    fromBase58String(getStrByKey(assetKey))
+  }
+################# dapp - user keys/values
+
+  func userStatusKey(addr:String)={
+    "user_"+addr
+  }
+
+  # values: "none", "active", "banned"
+  func userStatusValue(addr:String)={
+    match getString(this,userStatusKey(addr)){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+################# dapp - device keys/values
+
+  func deviceActionKey(addr:String)={
+    "device_"+addr
+  }
+  func deviceActionCounterKey(addr:String)={
+    "device_counter_"+addr
+  }
+  # values: "none", "open", "closed"
+  func deviceActionValue(addr:String)={
+    getStrByKey(deviceActionKey(addr))
+  }
+  func deviceActionCounterValue(addr:String)={
+    getNumberByKey(deviceActionCounterKey(addr))
+  }
+
+################# dapp - device key/nft keys/values
+  func nftKey(nft:String)={
+    "key_"+nft
+  }
+
+  func nftValue(nft:String)={
+    getStrByKey(nftKey(nft))
+  }
+
+# ################# device wallet - get owner
+#   # values: "none", address
+#   func getDeviceOwnerAddressValue(addr:Address)={
+#     getExtStrByKey(addr, "owner")
+#   }
+
+
+################### returns device if key is whitelisted, otherwise none
+  func deviceNotWhitelistedKey(device: Address, key: String)={
+    let nftId = nftKey(key)
+    let valInDevice = getExtStrByKey(device, nftId)
+    if(valInDevice != NONE) then false
+    else true
+  }
+
+
+  func deviceFromKey(key: Asset)={
+    let device = key.description.split("_")[keyDevice]
+    match (addressFromString(device)){
+      case t:Address => t
+      case _ => throw("Not a device key")
+    }
+  }
+
+  func getAssetInfo(asset:ByteVector)={
+    match (assetInfo(asset)) {
+        case t:Asset => t 
+        case _ => throw("Not a key")
+      }
+  }
+
+  func keyTimestampInvalid(key:Asset)={
+    let timestamp = parseIntValue(key.description.split("_")[keyValidUntil])
+    timestamp < lastBlock.timestamp
+  }
+
+  func keyPriceFromDevice(device: Address)={
+    match(getInteger(device,keyPriceKey)){
+      case t:Int => t
+      case _ => throw("Price not specified in device")
+    }
+  }
+
+  func ownerFromDevice(device: Address)={
+    match(getString(device,ownerKey)){
+      case t:String => t
+      case _ => throw("Owner not specified in device")
+    }
+  }
+
+  # checks for: 
+  # not allowed asset
+  # wrong amount
+  func priceIsWrong(i:Invocation, assetId:ByteVector, price: Int)={
+    if(i.payments.size() < 1) then throw("wrong payments count")
+    else if(i.payments[0].assetId != unit) then throw("wrong asset, supported only wws")
+    else if(i.payments[0].amount != price) then throw("wrong payment value, expected " + toString(price))
+    else false
+  }
+
+
+  func getAssetIdFromAttachedPayment(p:AttachedPayment)={
+    match(p.assetId){
+      case t:ByteVector => t
+      case _ => throw("Wrong asset")
+    }
+  }
+
+  func getAssetInfoFromPayment(i:Invocation)={
+    if(i.payments.size() != 1) then throw("wrong assets count")
+    else {
+      let asset = getAssetInfo(getAssetIdFromAttachedPayment(i.payments[0]))
+      if(asset.issuer != this) then throw("wrong asset issuer")
+      else if(keyTimestampInvalid(asset)) then throw("key expired")
+      else{
+        asset
+      }
+    }
+  }
+
+  func rechargeIfNeeded(account:Address, rechargeLimit:Int, txes:List[ScriptTransfer])={
+    if(wavesBalance(account).regular < rechargeLimit && rechargeLimit != 0) then {
+      ScriptTransfer(account,rechargeLimit, unit) :: txes
+    }else{
+      txes
+    }
+  }
+
+
+################# utx - checks
+  
+  # checks if action is on predefined list
+  func notAllowedDeviceAction(action:String)={
+    match (actions.indexOf(action)){
+      case a:Int => false
+      case _ => true
+    }
+  }
+################ public functions
+
+@Verifier(tx)
+func verify() = {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+}
+
+### TO REMOVE
+#
+# Write device entries:
+# - device_{address}: "closed"   # desired action of device
+# - device_counter_{address}: 0  # counter of action changes, triggers state change event from oracle
+#
+@Callable(i)
+func addDevice(deviceAddr: String) = {
+  if(i.caller!=this)then throw("Not permitted")
+  else if(deviceActionValue(deviceAddr)!=NONE)then throw("Device already added")
+  else {
+    [
+     StringEntry(deviceActionKey(deviceAddr), CLOSE),
+     IntegerEntry(deviceActionCounterKey(deviceAddr), deviceInitialCounter)
+    ]
+  }
+}
+
+
+### TO REMOVE
+#
+# Write device entries:
+# - user{address}: "active"
+#
+@Callable(i)
+func addUser(deviceAddr: String) = {
+  if(i.caller!=this)then throw("Not permitted")
+  else {
+    [
+      StringEntry(userStatusKey(deviceAddr), ACTIVE)
+    ]
+  }
+}
+
+### TO REMOVE
+#
+# Write device entries:
+# - user{address}: "active"
+#
+@Callable(i)
+func removeUser(deviceAddr: String) = {
+  if(i.caller!=this)then throw("Not permitted")
+  else {
+    [
+      DeleteEntry(userStatusKey(deviceAddr))
+    ]
+  }
+}
+
+###
+#
+# Updates device entries:
+# - device_{address}: action      # action to be made
+# - device_counter_{address} +1   # counter incremented with each action, change detected by oracle
+#
+@Callable(i)
+func deviceAction(keyID: String, action: String) = {
+  let hasNoKey = assetBalance(i.caller, fromBase58String(keyID)) < 1
+  let keyInfo = getAssetInfo(fromBase58String(keyID))
+  let device = deviceFromKey(keyInfo)
+  let deviceStr = toBase58String(device.bytes)
+  # let assetId = getAssetId()
+  let recharge = getExtNumberByKey(rechargeLimitKey)
+
+  if (hasNoKey) then throw("Key not owned")
+  else if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
+  else if(deviceNotWhitelistedKey(device, keyID)) then throw("Key not whitelisted")
+  else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")
+  else if(keyTimestampInvalid(keyInfo)) then throw("Key expired")
+  else {
+    let changes = [
+      StringEntry(deviceActionKey(deviceStr), action),
+      IntegerEntry(deviceActionCounterKey(deviceStr), deviceActionCounterValue(deviceStr) + 1)
+    ]
+    if(wavesBalance(i.caller).regular < recharge && recharge != 0) then {
+      ScriptTransfer(i.caller,recharge, unit) :: changes
+    }else{
+      changes
+    }
+  }
+}
+
+###
+#
+# Sends key and refils (as needed) account of sender and recipient
+#
+@Callable(i)
+func transferKey(recipient: String) ={
+  let keyInfo = getAssetInfoFromPayment(i) # throws errors when wrong issuer or key is expired
+  let recharge = getNumberByKey(rechargeLimitKey)
+  let recipientAddr = addressFromStringValue(recipient)
+  let transfer = ScriptTransfer(recipientAddr,1,keyInfo.id)::[]
+  rechargeIfNeeded(recipientAddr,recharge, # recharge recipient
+    rechargeIfNeeded(i.caller,recharge, transfer) # recharge caller
+  )
+}

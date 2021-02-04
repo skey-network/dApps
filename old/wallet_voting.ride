@@ -1,0 +1,239 @@
+{-# STDLIB_VERSION 4 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let account1PublicKey = base58'HfLpRhXtnuCabRyNT6z7soaXcbUpwLUhjyBCVQ4szwzd'
+let account2PublicKey = base58'2qjcWuL7QitmuhkSTM7CnNxurCYXuqJ9ubswLBGmXfDv'
+let otherPublicKey = base58'GaQkBG6yLLAarb8wvPrEKnQhFqWomD2ZGT1T4vVx24qw'
+
+let NONE = "none"
+let VOTERS = 3
+let QUORUM = 2
+let VOTING = "voting"
+let REVEAL = "reveal"
+let FEATURED = "featured"
+let DELISTED = "delisted"
+
+
+
+# coupons funcs
+func getNumberByKey(key: String) = {
+    let num = match getInteger(this, key) {
+        case a:Int => a
+        case _ => 0
+    }
+    num
+}
+
+func getStrByKey(key: String) = {
+    let str = match getString(this, key) {
+        case a:String => a
+        case _ => NONE
+    }
+    str
+}
+
+func getKeyItemPrice(item: String) = {
+    item + "_price"
+}
+func getValueItemPrice(item: String) = {
+    getNumberByKey(getKeyItemPrice(item))
+}
+func getKeyUserItemCounter(user: String, item: String) = {
+    item + "_" + user + "_cnt"
+}
+func getValueUserItemCounter(user: String, item : String) = {
+    getNumberByKey(getKeyUserItemCounter(user, item))
+}
+func getKeyItem(supplier: String, title: String) = {
+    "item_" + toBase58String(sha256(toBytes(supplier + title)))
+} 
+func getKeyItemData(item: String) = {
+    item + "_data"
+}
+func getKeyItemSupplier(item: String) = {
+    item + "_owner"
+}
+func getValueItemSupplier(item: String) = {
+    getStrByKey(getKeyItemSupplier(item))
+}
+func getKeyBalanceSupplier(account: String) = {
+    account + "_balance"
+}
+func getValueBalanceSupplier(account: String) = {
+    getNumberByKey(getKeyBalanceSupplier(account))
+}
+
+# voting funcs
+func getKeyCommit(item: String, user: String) = {
+    item + "_" + user + "_commit"
+}
+
+func getValueCommit(item: String, user: String) = {
+    getStrByKey(getKeyCommit(item, user))
+}
+
+func getKeyCommitsCount(item: String) = {
+    item + "_comcnt"
+}
+func getValueCommitsCount(item: String) = {
+    getNumberByKey(getKeyCommitsCount(item))
+}
+func getKeyReveal(item: String, user: String) = {
+    item + "_" + user + "_reveal"
+}
+func getValueReveal(item: String, user: String) = {
+    getStrByKey(getKeyReveal(item, user))
+}
+
+func getKeyItemStatus(item: String) = {
+    item + "_status"
+}
+func getValueItemStatus(item: String) = {
+    getStrByKey(getKeyItemStatus(item))
+}
+func getKeyVoteCount(item: String, vote: String) = {
+    item + "_res:" + vote
+}
+func getValueVoteCount(item: String, vote: String) = {
+    getNumberByKey(getKeyVoteCount(item, vote))
+}
+
+
+
+
+
+
+
+
+
+
+
+@Verifier(tx)
+func verify() = {
+    # let signature = sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+
+    true
+
+    # let account1 = sigVerify(tx.bodyBytes, tx.proofs[0], account1PublicKey) || sigVerify(tx.bodyBytes, tx.proofs[1], account1PublicKey) || sigVerify(tx.bodyBytes, tx.proofs[2], account1PublicKey)
+    # let account2 = sigVerify(tx.bodyBytes, tx.proofs[0], account2PublicKey) || sigVerify(tx.bodyBytes, tx.proofs[1], account2PublicKey) || sigVerify(tx.bodyBytes, tx.proofs[2], account2PublicKey)
+    # let other = sigVerify(tx.bodyBytes, tx.proofs[0], otherPublicKey) || sigVerify(tx.bodyBytes, tx.proofs[1], otherPublicKey) || sigVerify(tx.bodyBytes, tx.proofs[2], otherPublicKey)
+
+    # let account1account2 = account1 && account2
+    # let account1other = account1 && other
+    # let account2other = other && account2
+
+    # match tx{
+    #     case d: SetScriptTransaction => true
+    #     case d: DataTransaction => true
+    #     case _ => account1account2 || account1other || account2other
+    # }
+}
+
+# @Callable(i)
+# func purchase(coupon: String) = {
+#     let pmt = value(i.payments)
+#     if(isDefined(pmt[0].assetId))then throw("only wws")
+#     else{
+#         let customerAddress=toBase58String(i.caller.bytes)
+#         let price = match getInteger(this, coupon+"_coupon_price"){
+#             case a:Int => a
+#             case _ => 0
+#         }
+#         if(price==0)then throw("coupon not found")
+#         else if(pmt[0].amount < price) then throw("moar moeny")
+#         else if(pmt[0].amount > price) then throw(price.toString())
+#         else if(pmt.size() > 1) then throw("single item only")
+#         else {
+#             [
+#             StringEntry("status:purchase_" + coupon + "_customer_" + customerAddress, "confirmed"),
+#             IntegerEntry("price:purchase_" + coupon + "_customer_" + customerAddress, price)
+#             ]
+#         }
+#     }
+# }
+
+@Callable(i)
+func purchase(item: String) = {
+    let pmt = value(i.payments)
+    if(isDefined(pmt[0].assetId)) then throw("WAVES tokens only")
+    else{
+        let userAddress = toBase58String(i.caller.bytes)
+        let price = getValueItemPrice(item)
+        let supplierAddress = getValueItemSupplier(item)
+        if(pmt[0].amount < price) then throw("purchase less than item price")
+        else if(pmt[0].amount > price) then throw("purchase amount higher than item price")
+        else if(pmt.size() > 1) then throw("single item only")
+        else if ( supplierAddress == NONE ) then throw("supplier doesn't exist")
+        else {
+            [IntegerEntry(getKeyUserItemCounter(userAddress,item),getValueUserItemCounter(userAddress, item)+1),
+            IntegerEntry(getKeyBalanceSupplier(supplierAddress), getValueBalanceSupplier(supplierAddress) + pmt[0].amount)]
+        }
+    }
+}
+
+@Callable(i)
+func addItem(title: String, price: Int, data: String) = {
+    let supplierAddress = toBase58String(i.caller.bytes)
+    let item = getKeyItem(supplierAddress, title)
+    if(price<=0)then throw("purchase amount cannot be less than item price")
+    else if ( getValueItemSupplier(item) != NONE ) then throw("an item already exist")
+    else{
+        [
+            StringEntry(getKeyItemSupplier(item), supplierAddress),
+            IntegerEntry(getKeyItemPrice(item), price),
+            StringEntry(getKeyItemData(item), data)
+        ]
+    }
+}
+
+@Callable(i)
+func withdraw() = {
+    let supplierAddress = toBase58String(i.caller.bytes)
+    let balance = getValueBalanceSupplier(supplierAddress)
+    if(balance <= 0 ) then throw("insufficient balance")
+    else{
+        [IntegerEntry(getKeyBalanceSupplier(supplierAddress), 0),
+        ScriptTransfer(addressFromStringValue(supplierAddress), balance, unit)]
+    }    
+}
+
+@Callable(i)
+func voteCommit(item: String, hash: String) = {
+    let user = toBase58String(i.caller.bytes)
+    let commits = getValueCommitsCount(item)
+    let status = getValueItemStatus(item)
+    if( commits >= VOTERS) then throw("reached max num of voters")
+    else if(getValueCommit(item, user) != NONE) then throw("user has already participated")
+    else if(getKeyItemSupplier(item) == NONE) then throw("item does not exist")
+    else if(status != NONE && status != VOTING) then throw("voting is not possible")
+    else{
+        [
+            StringEntry(getKeyCommit(item,user), hash),
+            IntegerEntry(getKeyCommitsCount(item), commits + 1),
+            StringEntry(getKeyItemStatus(item), if(commits == VOTERS) then REVEAL else VOTING)
+        ]
+    }
+}
+
+@Callable(i)
+func voteReveal(item: String, vote: String, salt: String) = {
+    let user = toBase58String(i.caller.bytes)
+    let status = getValueItemStatus(item)
+    let newVoteCount = getValueVoteCount(item,vote) + 1
+    if(toBase58String(sha256(toBytes(vote + salt))) != getValueCommit(item, user))
+    then throw("reveal data is not valid")
+    else if(getValueCommitsCount(item) < VOTERS) then throw("max num of voters hasn't reached yet")
+    else if(getValueReveal(item, user) != NONE) then throw("user has already participated")
+    else if(status != VOTING && status != REVEAL) then throw("wrong status")
+    else if(vote != FEATURED && vote != DELISTED) then throw("wrong vote")
+    else if(status == FEATURED || status == DELISTED) then throw("vote has finished")
+    else {
+        [
+            StringEntry(getKeyReveal(item, user), vote),
+            IntegerEntry(getKeyVoteCount(item, vote), newVoteCount),
+            StringEntry(getKeyItemStatus(item), if(newVoteCount >= QUORUM) then vote else REVEAL)
+        ]
+    }
+}
+

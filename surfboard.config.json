@@ -1,0 +1,22 @@
+{
+    "ride_directory": "ride",
+    "test_directory": "test",
+    "envs": {
+        "testnet": {
+            "API_BASE": "https://nodes-testnet.wavesnodes.com/",
+            "CHAIN_ID": "T",
+            "SEED": "spread half warrior trend phone drill federal guilt language divide chest exchange supreme witness wave",
+            "timeout": 60000
+        },
+        "custom": {
+            "API_BASE": "http://localhost:6869/",
+            "CHAIN_ID": "R",
+            "SEED": "spread half warrior trend phone drill federal guilt language divide chest exchange supreme witness wave",
+            "timeout": 60000
+        }
+    },
+    "defaultEnv": "custom",
+    "mocha": {
+        "timeout": 60000
+    }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "tutorial",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha --timeout 120000 -r ts-node/register 'test/wallet.ts' ",
+    "deployDevice": "surfboard run scripts/device_wallet.deploy.js",
+    "deployDapp": "surfboard run scripts/dapp_wallet.deploy.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/chai": "^4.2.14",
+    "@types/mocha": "^8.0.4",
+    "chai": "^4.2.0",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.5"
+  },
+  "dependencies": {
+    "@waves/surfboard": "^2.1.1-beta.4",
+    "@waves/ts-lib-crypto": "^1.4.3",
+    "@waves/waves-transactions": "^4.1.2",
+    "chalk": "^4.1.0",
+    "mocha": "^8.2.1",
+    "node-fetch": "^2.6.1",
+    "surfboard": "^0.1.0"
+  },
+  "mocha": {
+    "timeout": 60000
+  }
+}

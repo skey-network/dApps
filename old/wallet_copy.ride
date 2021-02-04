@@ -1,0 +1,91 @@
+{-# STDLIB_VERSION 4 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+#=== SCHEMA =================================
+# voting_status => VOTING | REVEAL
+# commits_count => Int
+# reveals_count => Int
+# commit_<voter address> => commit hash
+# reveal_<voter address> => reveal vote
+#============================================
+
+let VOTERS = 3
+let VOTING = "VOTING"
+let REVEAL = "REVEAL"
+let FINISHED = "FINISHED"
+
+func getCommitsCount() = {
+  let count = this.getInteger("commits_count")
+  match (count) {
+    case count: Int => count
+    case _ => 0
+  }
+}
+
+func getRevealsCount() = {
+  let count = this.getInteger("reveals_count")
+  match (count) {
+    case count: Int => count
+    case _ => 0
+  }
+}
+
+func getVotingStatus() = {
+  let status = this.getString("voting_status")
+  match (status) {
+    case status: String => status
+    case _ => VOTING
+  }
+}
+
+func voteExists(address: String) = {
+  isDefined(this.getString("commit_" + address))
+}
+
+func revealExists(address: String) = {
+  isDefined(this.getString("reveal_" + address))
+}
+
+func validateVote(address: String, vote: String, salt: String) = {
+  let hash = this.getString("commit_" + address)
+  if (!isDefined(hash)) then false
+  else toBase58String(sha256(toBytes(vote + salt))) == hash
+}
+
+@Verifier(tx)
+func verify() = true
+
+@Callable(i)
+func commit(hash: String) = {
+  let user = toBase58String(i.caller.bytes)
+  let commitsCount = getCommitsCount()
+  let nextStatus = if (commitsCount + 1 == VOTERS) then REVEAL else VOTING
+
+  if (commitsCount == VOTERS) then throw("Max number of voters reached")
+  else if (voteExists(user)) then throw("User already voted")
+  else if (getVotingStatus() != VOTING) then throw("Voting is disabled")
+  else [
+    StringEntry("commit_" + user, hash),
+    IntegerEntry("commits_count", commitsCount + 1),
+    StringEntry("voting_status", nextStatus)
+  ]
+}
+
+@Callable(i)
+func reveal(vote: String, salt: String) = {
+  let user = toBase58String(i.caller.bytes)
+  let revealsCount = getRevealsCount()
+  let votingStatus = getVotingStatus()
+  let nextStatus = if (revealsCount + 1 == VOTERS) then FINISHED else REVEAL
+
+  if (votingStatus == VOTING) then throw("Voting has not finished yet")
+  else if (votingStatus == FINISHED) then throw("Voting is finished")
+  else if (revealExists(user)) then throw("You already revealed vote")
+  else if (!validateVote(user, vote, salt)) then throw("Vote is not valid")
+  else [
+    StringEntry("reveal_" + user, vote),
+    IntegerEntry("reveals_count", revealsCount + 1),
+    StringEntry("voting_status", nextStatus)
+  ]
+}

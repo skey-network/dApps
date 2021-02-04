@@ -1,0 +1,201 @@
+{-# STDLIB_VERSION 4 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let NONE = "none"
+let BANNED = "banned" # do we need it?
+let ACTIVE = "active"
+let CLOSED = "closed"
+let OPEN = "open"
+let assetKey = "asset" 
+let devicePriceKey = "device_price"
+let deviceKeyPriceKey = "device_key_price"
+
+################ utx etc
+
+  func getNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getStrByKey(key: String) = {
+    match getString(this,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+  func getExtNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getExtStrByKey(addr: Address, key: String) = {
+    match getString(addr,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+  func getAssetId()={
+    fromBase58String(getStrByKey(assetKey))
+  }
+################# dapp - user keys/values
+
+  func userStatusKey(addr:String)={
+    "user_"+addr
+  }
+  func userStatusValue(addr:String)={
+    match getString(this,userStatusKey(addr)){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+################# dapp - device keys/values
+
+  func deviceStatusKey(addr:String)={
+    "device_"+addr
+  }
+  func deviceCounterKey(addr:String)={
+    "device_counter_"+addr
+  }
+  func deviceStatusValue(addr:String)={
+    getStrByKey(deviceStatusKey(addr))
+  }
+  func deviceCounterValue(addr:String)={
+    getNumberByKey(deviceCounterKey(addr))
+  }
+
+################# dapp - device key/nft keys/values
+  func nftKey(nft:String)={
+    "key_"+nft
+  }
+
+  func nftValue(nft:String)={
+    getStrByKey(nftKey(nft))
+  }
+
+################# dapp - oracle keys/values
+
+  func oracleStatusKey(addr:String)={
+    "oracle_"+addr
+  }
+  func oracleStatusValue(addr:String)={
+    getStrByKey(oracleStatusKey(addr))
+  }
+
+################# device wallet - get owner
+
+  func getDeviceOwnerAddressValue(addr:Address)={
+    getExtStrByKey(addr,"owner")
+  }
+
+
+################# utx - checks
+
+  #func userActiveAndOwner()
+
+
+################ public functions
+
+@Verifier(tx)
+func verify() = {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+}
+
+@Callable(i)
+func addUser(addr: String, amount: Int) = {
+  if(oracleStatusValue(toBase58String(i.caller.bytes)) == ACTIVE) then { # check if oracle is on whitelist, todo blacklisting
+    let walletAddress = addressFromStringValue(addr)
+    let userStatus = userStatusValue(addr)
+    let minamount = 1 # is it required? or its eth side check
+    let assetId = getAssetId()
+
+    if(amount < minamount) then throw("asset amount is too low")
+    else if(userStatus == NONE) then { 
+      [StringEntry(userStatusKey(addr),ACTIVE),         # new user, write to data + transfer asset
+      ScriptTransfer(walletAddress, amount, assetId)]
+    }else{ 
+      [ScriptTransfer(walletAddress, amount, assetId)] # just transfer asset, user may be banned
+    }
+  }else throw("forbidden") # not in oracle whitelist
+}
+
+@Callable(i)
+func addDevice(deviceAddr: String) = {
+  let userStatus = userStatusValue(toBase58String(i.caller.bytes))
+  let ownerAddress = getDeviceOwnerAddressValue(addressFromStringValue(deviceAddr))
+  let callerAddress = toBase58String(i.caller.bytes)
+  let price = getNumberByKey(devicePriceKey)
+  let assetId = getAssetId() # may be replaced later with const
+
+  if(i.payments.size() < 1) then throw("wrong payments count")
+  else if(i.payments[0].assetId != assetId) then throw("wrong asset, supported only xyz")
+  else if(i.payments[0].amount != price) then throw("wrong payment value, expected " + toString(price))
+  else if(userStatus == NONE) then throw("user not registered")
+  else if(userStatus == BANNED) then throw("user banned")
+  else if(ownerAddress != callerAddress) then throw("not an owner")
+  else if(deviceStatusValue(deviceAddr) != NONE ) then throw("device already added")
+  else{
+    [
+     StringEntry(deviceStatusKey(deviceAddr),CLOSED), # todo, device initial status?
+     IntegerEntry(deviceCounterKey(deviceAddr), 0)
+    ]
+  }
+}
+
+@Callable(i)
+func addKey(deviceAddr: String, keyID: String) = {
+  let userStatus = userStatusValue(toBase58String(i.caller.bytes))
+  let ownerAddress = getDeviceOwnerAddressValue(addressFromStringValue(deviceAddr))
+  let callerAddress = toBase58String(i.caller.bytes)
+  let price = getNumberByKey(deviceKeyPriceKey)
+  let assetId = getAssetId()
+
+  if(i.payments.size() < 1) then throw("wrong payments count")
+  else if(i.payments[0].assetId != assetId) then throw("wrong asset, supported only xyz")
+  else if(i.payments[0].amount != price) then throw("wrong payment value, expected " + toString(price))
+  else if(userStatus == NONE) then throw("user not registered")
+  else if(userStatus == BANNED) then throw("user banned")
+  else if(ownerAddress != callerAddress) then throw("not an owner")
+  else if(deviceStatusValue(deviceAddr) == NONE ) then throw("device not yet added")
+  else{
+    [
+     StringEntry(nftKey(keyID),deviceAddr)
+    ]
+  }
+}
+
+
+
+# @Callable(i)
+# func deposit() = {
+#   let pmt = value(i.payments)
+#   if(pmt[0].assetId != myAsset) then throw("Wrong asset, required: 5GFY8QsKcrYr3ySRQCaJ7wRiY6fVfHTroYMBQw1mDvC6")
+#   else{
+#     let currentKey = toBase58String(i.caller.bytes)
+#     let currentAmount = match getInteger(this,currentKey){
+#       case a:Int => a
+#       case _ => 0
+#     }
+#     let newAmount = currentAmount + pmt[0].amount
+#     [IntegerEntry(currentKey, newAmount)]
+#   }
+# }
+
+# @Callable(i)
+# func withdraw(amount: Int) = {
+#   let currentKey = toBase58String(i.caller.bytes)
+#   let currentAmount = match getInteger(this,currentKey){
+#     case a:Int => a
+#     case _ => 0
+#   }
+#   let newAmount = currentAmount-amount
+#   if(amount < 0)then throw("negative amount!")
+#   else if (newAmount < 0) then throw("not enough balance")
+#   else {
+#     [
+#       IntegerEntry(currentKey, newAmount),
+#       ScriptTransfer(i.caller, amount, myAsset)
+#     ]
+#   }

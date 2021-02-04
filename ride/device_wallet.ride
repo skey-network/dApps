@@ -1,0 +1,164 @@
+{-# STDLIB_VERSION 4 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let NONE = "none"
+let ACTIVE = "active"
+let dappKey = "dapp"
+let ownerKey = "owner"
+
+################ utx etc
+
+  func getNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getStrByKey(key: String) = {
+    match getString(this,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+  func getExtNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getExtStrByKey(addr: Address, key: String) = {
+    match getString(addr,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+################# dapp - user keys/values
+
+
+################# dapp - device key/nft keys/values
+  func nftKey(nft:String)={
+    "key_"+nft
+  }
+
+  func nftValue(nft:String)={
+    getStrByKey(nftKey(nft))
+  }
+
+
+
+  # # checks for:
+  # # not an owner of device
+  # func notAnOwner(user:String, deviceAddr:String)={ 
+  #   let ownerAddress = getDeviceOwnerAddressValue(addressFromStringValue(deviceAddr))
+  #   if (ownerAddress != user) then throw("not an owner")
+  #   else false
+  # }
+
+  func getAssetInfo(asset:ByteVector)={
+    match (assetInfo(asset)) {
+        case t:Asset => t 
+        case _ => throw("Not a key")
+      }
+  }
+
+  
+  func updData(acu:List[StringEntry|IntegerEntry|DeleteEntry],item:String)={
+    let expl = item.split("#")
+    if(expl[0]=="set") then {
+      if(expl[1]=="string") then {
+        StringEntry(expl[2],expl[3])::acu
+      }else{  #if(expl[1]=="int") then {
+        IntegerEntry(expl[2],parseIntValue(expl[3]))::acu
+      }
+    }else{
+      DeleteEntry(expl[1])::acu
+    }
+  }
+
+  func addKeys(acu:List[StringEntry],item:String)={
+    StringEntry("key_"+item,ACTIVE)::acu
+  }
+
+################ public functions
+
+@Verifier(tx)
+func verify() = {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+}
+
+
+###
+#
+# Write key entry:
+# - key_{token_id}: "{device_address}"
+#
+@Callable(i)
+func addKey(keyID: String) = {
+  let callerAddress = toBase58String(i.caller.bytes)
+  let keyInfo = getAssetInfo( fromBase58String(keyID))
+  let dappAddr = addressFromStringValue(getStrByKey(dappKey))
+  let ownerAddr = addressFromStringValue(getStrByKey(ownerKey))
+
+  # let keyIsNotNft = match assetInfo(fromBase58String(keyID)) {
+  #   case asset:Asset =>
+  #       asset.decimals != 0 || asset.reissuable == true || asset.quantity != 1
+  #   case _ => true
+  # }
+
+
+  # TODO check device in key (will not work with open when there is another dev addr)
+  if(keyInfo.issuer!=dappAddr)then throw("Wrong key issuer") # accepted only keys issued by dapp
+  else if (dappAddr!=i.caller) then throw("Not permitted") # only dapp can add key
+  else if (nftValue(keyID) != NONE) then throw("This key is already assigned")
+  #else if (assetBalance(i.caller, fromBase58String(keyID)) < 1) then throw("key is not present in user wallet")
+  else{
+    [
+     StringEntry(nftKey(keyID), ACTIVE)
+    ]
+  }
+}
+
+###
+# 
+# Remove key entry
+# - key_{token_id}
+#
+@Callable(i)
+func removeKey(keyID: String) = {
+  let dappAddr = addressFromStringValue(getStrByKey(dappKey))
+  let ownerAddr = addressFromStringValue(getStrByKey(ownerKey))
+
+
+  if (ownerAddr!=i.caller && dappAddr!=i.caller) then throw("Not permitted") # only owner and dapp can remove key
+  else{
+    [
+     DeleteEntry(nftKey(keyID))
+    ]
+  }
+}
+
+###
+#
+# Updates data in device (max 15 entries at time) by item schema: 
+# action#type#key#value
+# actions: set/delete
+# type: string,int
+# key: key for data entry
+# value: value for entry (ignored for delete)
+@Callable(i)
+func updateData(args:List[String])={
+  let dappAddr = addressFromStringValue(getStrByKey(dappKey))
+  if(dappAddr != i.caller)then throw("Not permitted")
+  else FOLD<15>(args, [], updData)
+}
+
+###
+#
+# Adds many keys (max 80 keys at time) by id as string: 
+@Callable(i)
+func addManyKeys(args:List[String])={
+  let dappAddr = addressFromStringValue(getStrByKey(dappKey))
+  if(dappAddr != i.caller)then throw("Not permitted")
+  else FOLD<80>(args, [], addKeys)
+}
