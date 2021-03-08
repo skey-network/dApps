@@ -49,6 +49,7 @@ const DappRemovesKey = (th:TestHelper)=>{
     })
     
     describe('removed key cant open device', function(){
+      const invoker = th.Dummy
       it('invoke', async ()=>{
           await th.txDappFail(Transactions.invokeScript({
             dApp: th.Dapp.address,
@@ -58,12 +59,13 @@ const DappRemovesKey = (th:TestHelper)=>{
               args:[
                 { type: "string", value: th.deviceKey},
                 { type: "string", value: "open"},
+                { type: "string", value: invoker.address},
               ]
             },
             payment: [],
             fee: 500000,
             
-        },th.Dummy.seed),"Key not whitelisted")
+        },invoker.seed),"Key not whitelisted")
       })
 
       it('asset recharged', async()=>{

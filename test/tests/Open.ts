@@ -16,6 +16,7 @@ const Open = (th:TestHelper)=>{
   describe('open', ()=>{
 
     describe('not owned key', function(){
+      const invoker = th.DevOwner
       it('invoke', async ()=>{
           await th.txDappFail(Transactions.invokeScript({
               dApp: th.Dapp.address,
@@ -25,16 +26,17 @@ const Open = (th:TestHelper)=>{
                 args:[
                   { type: "string", value: th.deviceKey},
                   { type: "string", value: "open"},
+                  { type: "string", value: invoker.address},
                 ]
               },
               payment: [],
               fee: 500000,
               
-          },th.DevOwner.seed),"Key not owned")
+          },invoker.seed),"Key not owned")
       })
 
       it('asset not recharged?', async()=>{
-        await th.balance.expectFall(th.DevOwner)
+        await th.balance.expectFall(invoker)
       })
 
 
@@ -45,6 +47,7 @@ const Open = (th:TestHelper)=>{
     })
 
     describe('not a key', function(){
+      const invoker = th.DevOwner
       it('invoke', async ()=>{
           await th.txDappFail(Transactions.invokeScript({
             dApp: th.Dapp.address,
@@ -54,16 +57,17 @@ const Open = (th:TestHelper)=>{
               args:[
                 { type: "string", value: th.userNft},
                 { type: "string", value: "open"},
+                { type: "string", value: invoker.address},
               ]
             },
             payment: [],
             fee: 500000,
             
-        },th.DevOwner.seed),"Not a device key")
+        },invoker.seed),"Not a device key")
       })
 
       it('asset not recharged - not changed', async()=>{
-        await th.balance.expectChange(th.KeyOwner,0)
+        await th.balance.expectChange(invoker,0)
       })
 
       it('device not opened', async ()=>{
@@ -74,6 +78,7 @@ const Open = (th:TestHelper)=>{
     })
 
     describe('expired key cant open device', function(){
+      const invoker = th.KeyOwner
       it('invoke', async ()=>{
           await th.txDappFail(Transactions.invokeScript({
             dApp: th.Dapp.address,
@@ -83,16 +88,17 @@ const Open = (th:TestHelper)=>{
               args:[
                 { type: "string", value: th.expiredDeviceKey},
                 { type: "string", value: "open"},
+                { type: "string", value: invoker.address},
               ]
             },
             payment: [],
             fee: 500000,
             
-        },th.KeyOwner.seed),"Key expired")
+        },invoker.seed),"Key expired")
       })
 
       it('asset not recharged - not changed', async()=>{
-        await th.balance.expectChange(th.KeyOwner,0)
+        await th.balance.expectChange(invoker,0)
       })
 
       it('device not opened', async ()=>{
@@ -102,6 +108,7 @@ const Open = (th:TestHelper)=>{
     })
 
     describe('key opens device', function(){
+      const invoker = th.KeyOwner
       it('invoke', async ()=>{
           await th.txSuccess(Transactions.invokeScript({
             dApp: th.Dapp.address,
@@ -111,16 +118,17 @@ const Open = (th:TestHelper)=>{
               args:[
                 { type: "string", value: th.deviceKey},
                 { type: "string", value: "open"},
+                { type: "string", value: invoker.address},
               ]
             },
             payment: [],
             fee: 500000,
             
-        },th.KeyOwner.seed))
+        },invoker.seed))
       })
 
       it('asset recharged', async()=>{
-        await th.balance.expectRise(th.KeyOwner)
+        await th.balance.expectRise(invoker)
       })
 
       it('device opened', async ()=>{

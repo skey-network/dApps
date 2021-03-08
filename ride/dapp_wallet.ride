@@ -10,6 +10,8 @@ let OPEN = "open"
 let assetKey = "asset"
 let keyPriceKey = "key_price"
 let ownerKey = "owner"
+let organizationKey = "org_"
+let organizationUserKey = "user_"
 let rechargeLimitKey = "recharge_limit"
 let actions = [OPEN, CLOSE]
 let deviceInitialCounter = 0
@@ -173,6 +175,16 @@ let keyValidUntil = 1
     }
   }
 
+  func organizationWhitelisted(organization:String)={
+    let status = getStrByKey(organizationKey+organization)
+    if(status != ACTIVE)then throw("Organization not permitted") else true
+  }
+
+  func whitelistedByOrganization(org:Address, caller:String)={
+    let status = getExtStrByKey(org,organizationUserKey+caller)
+    if(status != ACTIVE)then throw("Not permitted by organization") else true
+  }
+
 
 ################# utx - checks
   
@@ -246,8 +258,17 @@ func removeUser(deviceAddr: String) = {
 # - device_counter_{address} +1   # counter incremented with each action, change detected by oracle
 #
 @Callable(i)
-func deviceAction(keyID: String, action: String) = {
-  let hasNoKey = assetBalance(i.caller, fromBase58String(keyID)) < 1
+func deviceAction(keyID: String, action: String, keyOwner: String) = {
+  let keyOwnerAddress = addressFromStringValue(keyOwner)
+  let hasNoKey = assetBalance(keyOwnerAddress, fromBase58String(keyID)) < 1
+  let allowedByKeyOwner = 
+    if (i.caller == keyOwnerAddress) then { 
+      true # caller is key owner
+    } 
+    else # caller uses organization
+    {
+      organizationWhitelisted(keyOwner) && whitelistedByOrganization(keyOwnerAddress, toBase58String(i.caller.bytes))
+    }
   let keyInfo = getAssetInfo(fromBase58String(keyID))
   let device = deviceFromKey(keyInfo)
   let deviceStr = toBase58String(device.bytes)
@@ -255,6 +276,7 @@ func deviceAction(keyID: String, action: String) = {
   let recharge = getExtNumberByKey(rechargeLimitKey)
 
   if (hasNoKey) then throw("Key not owned")
+  else if(!allowedByKeyOwner) then throw("Not permitted")
   else if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
   else if(deviceNotWhitelistedKey(device, keyID)) then throw("Key not whitelisted")
   else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")

@@ -17,6 +17,7 @@ import OwnerRemovesKey from './tests/OwnerRemovesKey'
 import UpdateDeviceData from './tests/UpdateDeviceData'
 import KeyOwnerTransfersKey from './tests/KeyOwnerTransfersKey'
 import DappAddsManyKeysToDevice from './tests/DappAddsManyKeysToDevice'
+import OpenAsOrganization from './tests/OpenAsOrganization'
 
 
 const wvs = 10 ** 8
@@ -69,3 +70,6 @@ DappRemovesKey(th)
 
 // Removing key by user
 OwnerRemovesKey(th)
+
+// Organizations
+OpenAsOrganization(th)

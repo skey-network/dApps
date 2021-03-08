@@ -35,15 +35,25 @@ class TestHelper{
   deviceKey:string
   requestedDeviceKey:string
   expiredDeviceKey:string
+  deviceActionsCount:number
   
+  // calls
   requestKeyCall:any
   addUserCall:any
   addDeviceCall:any
   addDeviceKeyCall:any
   transferKeyCall:any
   addKeysCall:any
-  keysForTest:[string]
+  openAsOrgCall:any
   
+  // for n keys test
+  keysForTest: string[]
+  
+
+  // open by organization
+  organizationKey:string
+
+
   balance:BalanceTracker
 
   // accounts
@@ -53,6 +63,8 @@ class TestHelper{
   Device:Account
   KeyOwner:Account
   Dummy:Account
+  Organization:Account
+  OrganizationUser:Account
 
   public constructor(config?:any){
     config = {...this.defaultConfig, ...(config ?? {})}
@@ -70,11 +82,13 @@ class TestHelper{
 
   initAccounts(){
     this.DevOwner= this.createAndLogAccount("DevOwner")
-    //this.Dapp= new Account('busy visit ritual arm deposit develop derive reject charge trip flag term blood unveil alert',this.chainId) 
+    //this.Dapp= new Account('***REMOVED*** input',this.chainId) 
     this.Dapp=this.createAndLogAccount("Dapp")
     this.Device= this.createAndLogAccount("Device")
     this.KeyOwner= this.createAndLogAccount("KeyOwner") 
     this.Dummy= this.createAndLogAccount("Dummy")
+    this.Organization= this.createAndLogAccount("Organization")
+    this.OrganizationUser= this.createAndLogAccount("OrganizationUser")
   }
 
   public createAndLogAccount(name:string){

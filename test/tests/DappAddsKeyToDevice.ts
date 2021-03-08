@@ -36,6 +36,22 @@ const DappAddsKeyToDevice = (th:TestHelper)=>{
       console.log("\t\texp dev key id: " + tx3.id);
       th.expiredDeviceKey = tx3.id
       
+      // key for organization
+      const tokenParams4 :Transactions.IIssueParams = {
+        chainId: th.chainId,
+        name: "Device key",
+        quantity: 1,
+        decimals: 0,
+        reissuable: false,
+        description: th.Device.address+"_"+(Date.now()+th.keyDuration),
+        fee: 500000
+      };
+      const signedIssueTx4 = Transactions.issue(tokenParams4, th.Dapp.seed)
+      let tx4 = await th.txSuccess(signedIssueTx4)
+      console.log("\t\torg key id: " + tx4.id);
+      th.organizationKey = tx4.id
+      
+
       // create key by user
       const tokenParams2 :Transactions.IIssueParams = {
         chainId: th.chainId,
@@ -138,6 +154,27 @@ const DappAddsKeyToDevice = (th:TestHelper)=>{
       })
     })
 
+    describe('add organization key', function(){
+      it('invoke', async ()=>{
+        await th.txSuccess(Transactions.invokeScript({
+          dApp: th.Device.address,
+          chainId: th.chainId,
+          call:{
+            function:"addKey",
+            args:[
+              { type: "string", value: th.organizationKey}
+            ]
+          },
+          payment: [],
+          fee: 900000 
+      },th.Dapp.seed))
+      })
+    
+      it('key added', async ()=>{
+        expect(await th.walletValueFor(th.Device,`key_${th.deviceKey}`)).to.eq(ACTIVE)
+      })
+    })
+
     describe('add expired key', function(){
       it('invoke', async ()=>{
         await th.txSuccess(Transactions.invokeScript({
@@ -169,6 +206,18 @@ const DappAddsKeyToDevice = (th:TestHelper)=>{
             assetId: th.deviceKey,
             fee:500000,
             recipient: th.KeyOwner.address
+          },
+          th.Dapp.seed // transfer from dapp as was not transfered to device owner
+        )
+      )
+      await th.txSuccess( // key for organization
+        Transactions.transfer(
+          {
+            chainId: th.chainId,
+            amount: 1,
+            assetId: th.organizationKey,
+            fee: 500000,
+            recipient: th.Organization.address
           },
           th.Dapp.seed // transfer from dapp as was not transfered to device owner
         )

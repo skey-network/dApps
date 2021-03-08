@@ -20,6 +20,8 @@ const SetupDapp = (th:TestHelper)=>{
           {amount: th.rechargeLimit/2, recipient: th.Dummy.address},
           {amount: th.rechargeLimit/2, recipient: th.KeyOwner.address},
           {amount: th.rechargeLimit/2, recipient: th.DevOwner.address},
+          {amount: th.rechargeLimit/2, recipient: th.Organization.address},
+          {amount: th.rechargeLimit/2, recipient: th.OrganizationUser.address},
         ]
       } 
 
