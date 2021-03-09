@@ -59,7 +59,7 @@ const DappRemovesKey = (th:TestHelper)=>{
               args:[
                 { type: "string", value: th.deviceKey},
                 { type: "string", value: "open"},
-                { type: "string", value: invoker.address},
+                // { type: "string", value: invoker.address},
               ]
             },
             payment: [],

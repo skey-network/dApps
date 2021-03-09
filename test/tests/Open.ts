@@ -26,7 +26,7 @@ const Open = (th:TestHelper)=>{
                 args:[
                   { type: "string", value: th.deviceKey},
                   { type: "string", value: "open"},
-                  { type: "string", value: invoker.address},
+                  // { type: "string", value: invoker.address},
                 ]
               },
               payment: [],
@@ -57,7 +57,7 @@ const Open = (th:TestHelper)=>{
               args:[
                 { type: "string", value: th.userNft},
                 { type: "string", value: "open"},
-                { type: "string", value: invoker.address},
+                // { type: "string", value: invoker.address},
               ]
             },
             payment: [],
@@ -88,7 +88,7 @@ const Open = (th:TestHelper)=>{
               args:[
                 { type: "string", value: th.expiredDeviceKey},
                 { type: "string", value: "open"},
-                { type: "string", value: invoker.address},
+                // { type: "string", value: invoker.address},
               ]
             },
             payment: [],
@@ -118,7 +118,7 @@ const Open = (th:TestHelper)=>{
               args:[
                 { type: "string", value: th.deviceKey},
                 { type: "string", value: "open"},
-                { type: "string", value: invoker.address},
+                // { type: "string", value: invoker.address},
               ]
             },
             payment: [],

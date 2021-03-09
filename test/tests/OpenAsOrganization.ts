@@ -21,7 +21,7 @@ const OpenAsOrganization = (th:TestHelper)=>{
       ))
 
       th.openAsOrgCall={
-        function:"deviceAction",
+        function:"deviceActionAs",
         args:[
           { type: "string", value: th.organizationKey},
           { type: "string", value: Open},

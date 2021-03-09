@@ -197,6 +197,30 @@ let keyValidUntil = 1
   }
 ################ public functions
 
+### open device func
+func deviceActionWithKey(i: Invocation, keyID: String, action: String) = {
+  let keyInfo = getAssetInfo(fromBase58String(keyID))
+  let device = deviceFromKey(keyInfo)
+  let deviceStr = toBase58String(device.bytes)
+  let recharge = getExtNumberByKey(rechargeLimitKey)
+
+  if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
+  else if(deviceNotWhitelistedKey(device, keyID)) then throw("Key not whitelisted")
+  else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")
+  else if(keyTimestampInvalid(keyInfo)) then throw("Key expired")
+  else {
+    let changes = [
+      StringEntry(deviceActionKey(deviceStr), action),
+      IntegerEntry(deviceActionCounterKey(deviceStr), deviceActionCounterValue(deviceStr) + 1)
+    ]
+    if(wavesBalance(i.caller).regular < recharge && recharge != 0) then {
+      ScriptTransfer(i.caller,recharge, unit) :: changes
+    }else{
+      changes
+    }
+  }
+}
+
 @Verifier(tx)
 func verify() = {
     sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
@@ -251,6 +275,9 @@ func removeUser(deviceAddr: String) = {
   }
 }
 
+
+
+
 ###
 #
 # Updates device entries:
@@ -258,40 +285,29 @@ func removeUser(deviceAddr: String) = {
 # - device_counter_{address} +1   # counter incremented with each action, change detected by oracle
 #
 @Callable(i)
-func deviceAction(keyID: String, action: String, keyOwner: String) = {
+func deviceActionAs(keyID: String, action: String, keyOwner: String) = {
   let keyOwnerAddress = addressFromStringValue(keyOwner)
-  let hasNoKey = assetBalance(keyOwnerAddress, fromBase58String(keyID)) < 1
-  let allowedByKeyOwner = 
-    if (i.caller == keyOwnerAddress) then { 
-      true # caller is key owner
-    } 
-    else # caller uses organization
-    {
-      organizationWhitelisted(keyOwner) && whitelistedByOrganization(keyOwnerAddress, toBase58String(i.caller.bytes))
-    }
-  let keyInfo = getAssetInfo(fromBase58String(keyID))
-  let device = deviceFromKey(keyInfo)
-  let deviceStr = toBase58String(device.bytes)
-  # let assetId = getAssetId()
-  let recharge = getExtNumberByKey(rechargeLimitKey)
+  let hasNoKey = assetBalance(keyOwnerAddress, fromBase58String(keyID)) < 1 # organisation has no key
+  let allowedByKeyOwner = organizationWhitelisted(keyOwner) && whitelistedByOrganization(keyOwnerAddress, toBase58String(i.caller.bytes))
 
   if (hasNoKey) then throw("Key not owned")
   else if(!allowedByKeyOwner) then throw("Not permitted")
-  else if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
-  else if(deviceNotWhitelistedKey(device, keyID)) then throw("Key not whitelisted")
-  else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")
-  else if(keyTimestampInvalid(keyInfo)) then throw("Key expired")
-  else {
-    let changes = [
-      StringEntry(deviceActionKey(deviceStr), action),
-      IntegerEntry(deviceActionCounterKey(deviceStr), deviceActionCounterValue(deviceStr) + 1)
-    ]
-    if(wavesBalance(i.caller).regular < recharge && recharge != 0) then {
-      ScriptTransfer(i.caller,recharge, unit) :: changes
-    }else{
-      changes
-    }
-  }
+  else deviceActionWithKey(i,keyID, action) 
+}
+
+###
+#
+# Updates device entries:
+# - device_{address}: action      # action to be made
+# - device_counter_{address} +1   # counter incremented with each action, change detected by oracle
+#
+@Callable(i)
+func deviceAction(keyID: String, action: String) = {
+  let keyOwnerAddress = i.caller
+  let hasNoKey = assetBalance(keyOwnerAddress, fromBase58String(keyID)) < 1 # organisation has no key
+  
+  if (hasNoKey) then throw("Key not owned")
+  else deviceActionWithKey(i,keyID, action) 
 }
 
 ###

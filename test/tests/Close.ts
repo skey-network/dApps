@@ -19,7 +19,7 @@ const Close = (th:TestHelper)=>{
                 args:[
                   { type: "string", value: th.deviceKey},
                   { type: "string", value: "close"},
-                  { type: "string", value: invoker.address},
+                  // { type: "string", value: invoker.address},
                 ]
               },
               payment: [],
@@ -45,7 +45,7 @@ const Close = (th:TestHelper)=>{
               args:[
                 { type: "string", value: th.userNft},
                 { type: "string", value: "close"},
-                { type: "string", value: invoker.address},
+                // { type: "string", value: invoker.address},
 
               ]
             },
@@ -73,7 +73,7 @@ const Close = (th:TestHelper)=>{
               args:[
                 { type: "string", value: th.deviceKey},
                 { type: "string", value: "close"},
-                { type: "string", value: invoker.address},
+                // { type: "string", value: invoker.address},
               ]
             },
             payment: [],
