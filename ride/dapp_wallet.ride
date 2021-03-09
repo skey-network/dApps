@@ -18,6 +18,7 @@ let deviceInitialCounter = 0
 #let KEY_DAPP=0 - use issuer
 let keyDevice = 0
 let keyValidUntil = 1
+let oneHour = 3600000 # in miliseconds
 
 
 ################ utx etc
@@ -98,8 +99,7 @@ let keyValidUntil = 1
   func deviceNotWhitelistedKey(device: Address, key: String)={
     let nftId = nftKey(key)
     let valInDevice = getExtStrByKey(device, nftId)
-    if(valInDevice != NONE) then false
-    else true
+    valInDevice != ACTIVE
   }
 
 
@@ -167,11 +167,12 @@ let keyValidUntil = 1
     }
   }
 
-  func rechargeIfNeeded(account:Address, rechargeLimit:Int, txes:List[ScriptTransfer])={
-    if(wavesBalance(account).regular < rechargeLimit && rechargeLimit != 0) then {
-      ScriptTransfer(account,rechargeLimit, unit) :: txes
+  func rechargeIfNeeded(account:Address)={
+    let recharge = getExtNumberByKey(rechargeLimitKey)
+    if(recharge > 0 && wavesBalance(account).regular < recharge && recharge != 0) then {
+      ScriptTransfer(account, recharge, unit) :: []
     }else{
-      txes
+      []
     }
   }
 
@@ -212,12 +213,8 @@ func deviceActionWithKey(i: Invocation, keyID: String, action: String) = {
     let changes = [
       StringEntry(deviceActionKey(deviceStr), action),
       IntegerEntry(deviceActionCounterKey(deviceStr), deviceActionCounterValue(deviceStr) + 1)
-    ]
-    if(wavesBalance(i.caller).regular < recharge && recharge != 0) then {
-      ScriptTransfer(i.caller,recharge, unit) :: changes
-    }else{
-      changes
-    }
+    ] 
+    changes ++ rechargeIfNeeded(i.caller)
   }
 }
 
@@ -317,10 +314,29 @@ func deviceAction(keyID: String, action: String) = {
 @Callable(i)
 func transferKey(recipient: String) ={
   let keyInfo = getAssetInfoFromPayment(i) # throws errors when wrong issuer or key is expired
-  let recharge = getNumberByKey(rechargeLimitKey)
   let recipientAddr = addressFromStringValue(recipient)
   let transfer = ScriptTransfer(recipientAddr,1,keyInfo.id)::[]
-  rechargeIfNeeded(recipientAddr,recharge, # recharge recipient
-    rechargeIfNeeded(i.caller,recharge, transfer) # recharge caller
-  )
+  transfer ++ rechargeIfNeeded(recipientAddr) ++ rechargeIfNeeded(i.caller) # transfer and recharge if needed
+}
+
+@Callable(i)
+func requestKey(deviceAddr: String, duration: Int) = {
+  let issuedAt=lastBlock.timestamp
+  let validUntil=issuedAt + duration * oneHour
+  let deviceOwner = ownerFromDevice(addressFromStringValue(deviceAddr))
+  let keyPriceConstant = keyPriceFromDevice(addressFromStringValue(deviceAddr)) # throws if no price is specified
+  let keyPrice = keyPriceConstant * duration
+  let assetId = getAssetId()
+
+  if(toBase58String(i.caller.bytes)!=deviceOwner)then throw("Not permitted")
+  else if(deviceActionKey(deviceAddr)==NONE) then throw("No such device")
+  else if(priceIsWrong(i,assetId,keyPrice))then throw("wrong price")
+  else{
+    let issue = Issue("SmartKEy",deviceAddr+"_"+validUntil.toString(),1,0,false) # timestamp of issue is in token details
+    let newAssetId = calculateAssetId(issue)
+    [
+      issue,
+      ScriptTransfer(i.caller,1,newAssetId)
+    ] ++ rechargeIfNeeded(i.caller)
+  } 
 }

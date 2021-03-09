@@ -18,6 +18,8 @@ import UpdateDeviceData from './tests/UpdateDeviceData'
 import KeyOwnerTransfersKey from './tests/KeyOwnerTransfersKey'
 import DappAddsManyKeysToDevice from './tests/DappAddsManyKeysToDevice'
 import OpenAsOrganization from './tests/OpenAsOrganization'
+import OwnerRequestsKey from './tests/OwnerRequestsKey'
+import OwnerAddsKeyToDevice from './tests/OwnerAddsKeyToDevice'
 
 
 const wvs = 10 ** 8
@@ -73,3 +75,9 @@ OwnerRemovesKey(th)
 
 // Organizations
 OpenAsOrganization(th)
+
+// Owner requests new key from dapp
+OwnerRequestsKey(th)
+
+// Owner adds key to device
+OwnerAddsKeyToDevice(th)

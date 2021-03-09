@@ -3,6 +3,7 @@ import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
 
 const ACTIVE="active"
+const HOUR_IN_TS = 3600000
 
 const DappAddsKeyToDevice = (th:TestHelper)=>{
   describe('DappAddsKeyToDevice', ()=>{
@@ -14,7 +15,7 @@ const DappAddsKeyToDevice = (th:TestHelper)=>{
         quantity: 1,
         decimals: 0,
         reissuable: false,
-        description: th.Device.address+"_"+(Date.now()+th.keyDuration),
+        description: th.Device.address+"_"+(Date.now()+th.keyDuration * HOUR_IN_TS),
         fee: 500000
       };
       const signedIssueTx = Transactions.issue(tokenParams, th.Dapp.seed)
@@ -28,7 +29,7 @@ const DappAddsKeyToDevice = (th:TestHelper)=>{
         quantity: 1,
         decimals: 0,
         reissuable: false,
-        description: th.Device.address+"_"+(Date.now()-th.keyDuration),
+        description: th.Device.address+"_"+(Date.now()-th.keyDuration * HOUR_IN_TS),
         fee: 500000
       };
       const signedIssueTx3 = Transactions.issue(tokenParams3, th.Dapp.seed)
@@ -43,7 +44,7 @@ const DappAddsKeyToDevice = (th:TestHelper)=>{
         quantity: 1,
         decimals: 0,
         reissuable: false,
-        description: th.Device.address+"_"+(Date.now()+th.keyDuration),
+        description: th.Device.address+"_"+(Date.now()+th.keyDuration * HOUR_IN_TS),
         fee: 500000
       };
       const signedIssueTx4 = Transactions.issue(tokenParams4, th.Dapp.seed)

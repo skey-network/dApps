@@ -12,8 +12,8 @@ class TestHelper{
   defaultConfig:any={
     chainId:'R',
     nodeUrl:'http://localhost:6869/',
-    keyPrice:2000000,
-    keyDuration:1000000,
+    keyPrice:2000,
+    keyDuration:5,
     rechargeLimit:50 *100000,
     initAccounts:true
   }
@@ -58,6 +58,7 @@ class TestHelper{
 
   // accounts
   Bank:Account=new Account('***REMOVED***','R')
+  // Bank:Account=new Account('***REMOVED***','R')
   DevOwner:Account
   Dapp:Account
   Device:Account

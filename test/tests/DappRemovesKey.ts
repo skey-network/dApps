@@ -3,6 +3,8 @@ import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
 
 const CLOSE="close"
+const ACTIVE="active"
+const INACTIVE="inactive"
 
 const DappRemovesKey = (th:TestHelper)=>{
   describe('DappRemovesKey', ()=>{
@@ -43,8 +45,8 @@ const DappRemovesKey = (th:TestHelper)=>{
       },th.Dapp.seed))
       })
     
-      it('key removed', async ()=>{
-        expect(await th.walletValueFor(th.Device,`key_${th.deviceKey}`)).to.eq(undefined)
+      it('key banned', async ()=>{
+        expect(await th.walletValueFor(th.Device,`key_${th.deviceKey}`)).to.eq(INACTIVE)
       })
     })
     

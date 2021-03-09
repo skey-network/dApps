@@ -2,6 +2,8 @@ import { expect } from 'chai'
 import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
 
+const INACTIVE = 'inactive'
+
 const OwnerRemovesKey = (th:TestHelper)=>{
   describe('OwnerRemovesKey', ()=>{
     describe('not an owner/dapp', function(){
@@ -44,7 +46,28 @@ const OwnerRemovesKey = (th:TestHelper)=>{
       it('key removed', async ()=>{
         expect(await th.walletValueFor(th.Device,`key_${th.expiredDeviceKey}`)).to.eq(undefined)
       })
-    })    
+    })
+    
+    describe('cant remove banned', ()=>{
+      it('invoke', async ()=>{
+        await th.txDappFail(Transactions.invokeScript({
+          dApp: th.Device.address,
+          chainId: th.chainId,
+          call:{
+            function:"removeKey",
+            args:[
+              { type: "string", value: th.deviceKey},
+            ]
+          },
+          payment: [],
+          fee: 500000,
+      },th.DevOwner.seed), 'Not permitted')
+      })
+    
+      it('key not removed', async ()=>{
+        expect(await th.walletValueFor(th.Device,`key_${th.deviceKey}`)).to.eq(INACTIVE)
+      })
+    })
   })
 }
 export default OwnerRemovesKey

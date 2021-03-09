@@ -4,6 +4,7 @@
 
 let NONE = "none"
 let ACTIVE = "active"
+let INACTIVE = "inactive"
 let dappKey = "dapp"
 let ownerKey = "owner"
 
@@ -109,7 +110,7 @@ func addKey(keyID: String) = {
 
   # TODO check device in key (will not work with open when there is another dev addr)
   if(keyInfo.issuer!=dappAddr)then throw("Wrong key issuer") # accepted only keys issued by dapp
-  else if (dappAddr!=i.caller) then throw("Not permitted") # only dapp can add key
+  else if ((ownerAddr!=i.caller) && (dappAddr!=i.caller)) then throw("Not permitted") # only dapp can add key
   else if (nftValue(keyID) != NONE) then throw("This key is already assigned")
   #else if (assetBalance(i.caller, fromBase58String(keyID)) < 1) then throw("key is not present in user wallet")
   else{
@@ -128,14 +129,16 @@ func addKey(keyID: String) = {
 func removeKey(keyID: String) = {
   let dappAddr = addressFromStringValue(getStrByKey(dappKey))
   let ownerAddr = addressFromStringValue(getStrByKey(ownerKey))
-
-
-  if (ownerAddr!=i.caller && dappAddr!=i.caller) then throw("Not permitted") # only owner and dapp can remove key
-  else{
-    [
-     DeleteEntry(nftKey(keyID))
-    ]
-  }
+  if(dappAddr==i.caller) then {                 # dapp bans key
+     [StringEntry(nftKey(keyID),INACTIVE)]
+  } else if (ownerAddr==i.caller) then {        # user can remove not banned key
+     let keyStatus = getStrByKey(nftKey(keyID))
+     if(keyStatus == "active") then {           
+      [DeleteEntry(nftKey(keyID))] # remove key from data
+     } else {
+       throw("Not permitted")
+     }
+  } else throw("Not permitted")
 }
 
 ###
