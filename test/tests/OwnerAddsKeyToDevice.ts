@@ -74,7 +74,7 @@ const OwnerAddsKeyToDevice = (th:TestHelper)=>{
           payment: [],
           fee: 500000,
           
-      },th.DevOwner.seed), 'This key is already assigned')
+      },th.DevOwner.seed), 'This key is banned')
       })
     
       it('key not added', async ()=>{

@@ -20,6 +20,7 @@ import DappAddsManyKeysToDevice from './tests/DappAddsManyKeysToDevice'
 import OpenAsOrganization from './tests/OpenAsOrganization'
 import OwnerRequestsKey from './tests/OwnerRequestsKey'
 import OwnerAddsKeyToDevice from './tests/OwnerAddsKeyToDevice'
+import DappUnbansKey from './tests/DappUnbansKey'
 
 
 const wvs = 10 ** 8
@@ -81,3 +82,6 @@ OwnerRequestsKey(th)
 
 // Owner adds key to device
 OwnerAddsKeyToDevice(th)
+
+// Dapp unbans key
+DappUnbansKey(th)

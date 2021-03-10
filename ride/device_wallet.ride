@@ -111,7 +111,8 @@ func addKey(keyID: String) = {
   # TODO check device in key (will not work with open when there is another dev addr)
   if(keyInfo.issuer!=dappAddr)then throw("Wrong key issuer") # accepted only keys issued by dapp
   else if ((ownerAddr!=i.caller) && (dappAddr!=i.caller)) then throw("Not permitted") # only dapp can add key
-  else if (nftValue(keyID) != NONE) then throw("This key is already assigned")
+  else if (nftValue(keyID) == INACTIVE && dappAddr!=i.caller) then throw("This key is banned")
+  else if (nftValue(keyID) == ACTIVE) then throw("This key is already assigned")
   #else if (assetBalance(i.caller, fromBase58String(keyID)) < 1) then throw("key is not present in user wallet")
   else{
     [
