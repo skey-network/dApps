@@ -5,6 +5,7 @@ import { IInvokeScriptCall } from '@waves/waves-transactions/dist/transactions'
 import { keyPair } from '@waves/ts-lib-crypto'
 
 const ACTIVE="active"
+const INACTIVE="inactive"
 const CLOSE="close"
 const OPEN="open"
 
@@ -55,7 +56,29 @@ const OwnerAddsKeyToDevice = (th:TestHelper)=>{
       })
     
       it('key not added', async ()=>{
-        expect(await th.walletValueFor(th.Device,`key_${th.userNft}`)).to.eq(undefined)
+        expect(await th.walletValueFor(th.Device,`key_${th.requestedDeviceKey}`)).to.eq(undefined)
+      })
+    })
+
+    describe('banned key', function(){
+      it('invoke', async ()=>{
+        await th.txDappFail(Transactions.invokeScript({
+          dApp: th.Device.address,
+          chainId: th.chainId,
+          call: {
+            function:"addKey",
+            args:[
+              { type: "string", value: th.deviceKey},
+            ]
+          },
+          payment: [],
+          fee: 500000,
+          
+      },th.DevOwner.seed), 'This key is already assigned')
+      })
+    
+      it('key not added', async ()=>{
+        expect(await th.walletValueFor(th.Device,`key_${th.deviceKey}`)).to.eq(INACTIVE)
       })
     })
 
