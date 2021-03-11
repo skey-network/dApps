@@ -18,7 +18,7 @@ let deviceInitialCounter = 0
 #let KEY_DAPP=0 - use issuer
 let keyDevice = 0
 let keyValidUntil = 1
-let oneHour = 3600000 # in miliseconds
+let oneMinute = 60000 # in miliseconds
 
 
 ################ utx etc
@@ -322,7 +322,7 @@ func transferKey(recipient: String) ={
 @Callable(i)
 func requestKey(deviceAddr: String, duration: Int) = {
   let issuedAt=lastBlock.timestamp
-  let validUntil=issuedAt + duration * oneHour
+  let validUntil=issuedAt + duration * oneMinute
   let deviceOwner = ownerFromDevice(addressFromStringValue(deviceAddr))
   let keyPriceConstant = keyPriceFromDevice(addressFromStringValue(deviceAddr)) # throws if no price is specified
   let keyPrice = keyPriceConstant * duration
