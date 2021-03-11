@@ -64,11 +64,7 @@ class TestHelper{
   balance:BalanceTracker
 
   // accounts
-<<<<<<< HEAD
-  Bank:Account=new Account('***REMOVED***','R')
-=======
   Bank:Account
->>>>>>> master
   DevOwner:Account
   Dapp:Account
   Device:Account
