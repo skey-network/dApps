@@ -22,24 +22,23 @@ import OwnerRequestsKey from './tests/OwnerRequestsKey'
 import OwnerAddsKeyToDevice from './tests/OwnerAddsKeyToDevice'
 import DappUnbansKey from './tests/DappUnbansKey'
 
-
 const wvs = 10 ** 8
-const waves = wavlets => wavlets * wvs
-const wavlets = waves => waves / wvs
+const waves = (wavlets) => wavlets * wvs
+const wavlets = (waves) => waves / wvs
 
 // Setup object  (accounts/prices etc)
-const th= new TestHelper()  
+const th = new TestHelper()
 
 //  Setup wallets
-it('setup wallets', async()=>{
+it('setup wallets', async () => {
   const params = {
     chainId: th.chainId.charCodeAt(0),
     fee: 1000000,
     transfers: [
-      {amount: 100000000, recipient: th.Device.address},
-      {amount: 1000000000, recipient: th.Dapp.address},
+      { amount: 100000000, recipient: th.Device.address },
+      { amount: 1000000000, recipient: th.Dapp.address }
     ]
-  } 
+  }
 
   let tx = await th.txSuccess(Transactions.massTransfer(params, th.Bank.seed))
 })

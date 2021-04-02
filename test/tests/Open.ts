@@ -164,6 +164,37 @@ const Open = (th: TestHelper) => {
         ).to.eq(++th.deviceActionsCount)
       })
     })
+
+    describe('(for listener)', function () {
+      const invoker = th.Dapp
+      it('invoke', async () => {
+        await th.txSuccess(
+          Transactions.invokeScript(
+            {
+              dApp: th.Dapp.address,
+              chainId: th.chainId,
+              call: {
+                function: 'deviceAction',
+                args: [
+                  { type: 'string', value: th.silentKey },
+                  { type: 'string', value: 'open' }
+                  // { type: "string", value: invoker.address},
+                ]
+              },
+              payment: [],
+              fee: 900000
+            },
+            invoker.seed
+          )
+        )
+      })
+      it('device opened', async () => {
+        expect(await th.dappValueFor(`device_${th.Device.address}`)).to.eq(OPEN)
+        expect(
+          await th.dappValueFor(`device_counter_${th.Device.address}`)
+        ).to.eq(++th.deviceActionsCount)
+      })
+    })
   })
 }
 export default Open

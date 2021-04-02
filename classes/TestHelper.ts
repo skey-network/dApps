@@ -42,6 +42,7 @@ class TestHelper {
   deviceKey: string
   requestedDeviceKey: string
   expiredDeviceKey: string
+  silentKey: string
   deviceActionsCount: number = 0
 
   // calls
@@ -89,8 +90,13 @@ class TestHelper {
   initAccounts() {
     this.Bank = new Account(this.config.bankSeed, this.config.chainId)
     this.DevOwner = this.createAndLogAccount('DevOwner')
-    //this.Dapp= new Account('***REMOVED*** input',this.chainId)
-    this.Dapp = this.createAndLogAccount('Dapp')
+
+    this.Dapp = new Account(
+      '***REMOVED*** input',
+      this.chainId
+    )
+    console.log('Dapp:', this.Dapp.address)
+    // this.Dapp = this.createAndLogAccount('Dapp')
     this.Device = this.createAndLogAccount('Device')
     this.KeyOwner = this.createAndLogAccount('KeyOwner')
     this.Dummy = this.createAndLogAccount('Dummy')
