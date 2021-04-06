@@ -21,6 +21,7 @@ import OpenAsOrganization from './tests/OpenAsOrganization'
 import OwnerRequestsKey from './tests/OwnerRequestsKey'
 import OwnerAddsKeyToDevice from './tests/OwnerAddsKeyToDevice'
 import DappUnbansKey from './tests/DappUnbansKey'
+import Organization from './tests/Organization'
 
 const wvs = 10 ** 8
 const waves = (wavlets) => wavlets * wvs
@@ -36,15 +37,19 @@ it('setup wallets', async () => {
     fee: 1000000,
     transfers: [
       { amount: 100000000, recipient: th.Device.address },
-      { amount: 1000000000, recipient: th.Dapp.address }
+      { amount: 1000000000, recipient: th.Dapp.address },
+      { amount: 1000000000, recipient: th.Organization.address }
     ]
   }
 
   let tx = await th.txSuccess(Transactions.massTransfer(params, th.Bank.seed))
 })
 
-// Setup dapp [issue token, write to data, pricing to data, send assets]
+// Setup dapp [issue token, write to data, pricing to data, send assets, set script]
 SetupDapp(th)
+
+// Setup organization [set script]
+Organization(th)
 
 // Adding device by dapp, place reqired data and deploy script
 AddDevice(th)

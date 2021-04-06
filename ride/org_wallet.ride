@@ -1,0 +1,84 @@
+{-# STDLIB_VERSION 4 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let NONE = "none"
+let ACTIVE = "active"
+let INACTIVE = "inactive"
+let dappKey = "dapp"
+let ownerKey = "owner"
+
+################ utx etc
+
+  func getNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getStrByKey(key: String) = {
+    match getString(this,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+  func getExtNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getExtStrByKey(addr: Address, key: String) = {
+    match getString(addr,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+
+  func userKeyFromAddr(addr: Address) = {
+    "user_" + toBase58String(addr.bytes)
+  }
+
+  func tokenKeyFromAssetId(assetId:ByteVector) = {
+    "token_" + toBase58String(assetId)
+  }
+
+################  token
+
+  func getTokenInfo(asset:ByteVector) = {
+    match (assetInfo(asset)) {
+        case t:Asset => t 
+        case _ => throw("Not a key")
+      }
+  }
+
+  func getPaymentSingleToken(payments: List[AttachedPayment])={
+    if(payments.size() != 1 ) then throw("Wrong payments count")
+    else {
+      match (payments[0].assetId) {
+          case t:ByteVector => getTokenInfo(t)
+          case _ => throw("Wrong asset")
+        }
+    }
+  }
+
+  func checkTokenActive(token:ByteVector)={
+    getStrByKey(tokenKeyFromAssetId(token)) == ACTIVE
+  }
+
+################ public functions
+
+@Verifier(tx)
+func verify() = {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+}
+
+@Callable(i)
+func activate() = {
+  let token = getPaymentSingleToken(i.payments)
+  if(checkTokenActive(token.id)) then {
+    [
+      StringEntry(userKeyFromAddr(i.caller), ACTIVE)
+    ]
+  } else throw("Activation failed, token is inactive")
+}

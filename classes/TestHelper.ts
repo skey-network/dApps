@@ -57,8 +57,10 @@ class TestHelper {
   // for n keys test
   keysForTest: string[]
 
-  // open by organization
+  // organization
   organizationKey: string
+  orgAccessKey: string
+  fakeOrgAccessKey: string
 
   balance: BalanceTracker
 
@@ -71,6 +73,7 @@ class TestHelper {
   Dummy: Account
   Organization: Account
   OrganizationUser: Account
+  OrganizationUserByKey: Account
 
   public constructor(config?: any) {
     this.config = { ...this.defaultConfig, ...(config ?? {}) }
@@ -102,6 +105,9 @@ class TestHelper {
     this.Dummy = this.createAndLogAccount('Dummy')
     this.Organization = this.createAndLogAccount('Organization')
     this.OrganizationUser = this.createAndLogAccount('OrganizationUser')
+    this.OrganizationUserByKey = this.createAndLogAccount(
+      'OrganizationUserByKey'
+    )
   }
 
   public createAndLogAccount(name: string) {
@@ -123,22 +129,23 @@ class TestHelper {
     const result = await writeFileProm('surfboard.config.json', text)
   }
 
-  public async deployDapp(seed: String) {
-    const dir = __dirname.substr(0, __dirname.length - 7)
-    const { stdout } = await this._execFile(
-      'surfboard',
-      ['run', 'scripts/dapp_wallet.deploy.js', '--variables', `SEED=${seed}`],
-      { cwd: dir }
-    )
-    console.log(stdout)
-    return stdout
+  public async deployDapp(seed: string) {
+    await this.deploy(seed, 'scripts/dapp_wallet.deploy.js')
   }
 
-  public async deployDevice(seed: String) {
+  public async deployDevice(seed: string) {
+    await this.deploy(seed, 'scripts/device_wallet.deploy.js')
+  }
+
+  public async deployOrg(seed: string) {
+    await this.deploy(seed, 'scripts/org_wallet.deploy.js')
+  }
+
+  async deploy(seed: string, file: string) {
     const dir = __dirname.substr(0, __dirname.length - 7)
     const { stdout } = await this._execFile(
       'surfboard',
-      ['run', 'scripts/device_wallet.deploy.js', '--variables', `SEED=${seed}`],
+      ['run', file, '--variables', `SEED=${seed}`],
       { cwd: dir }
     )
     console.log(stdout)
@@ -201,6 +208,10 @@ class TestHelper {
       result += characters.charAt(Math.floor(Math.random() * charactersLength))
     }
     return result
+  }
+
+  delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 }
 
