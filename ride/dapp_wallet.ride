@@ -332,7 +332,7 @@ func requestKey(deviceAddr: String, duration: Int) = {
   else if(deviceActionKey(deviceAddr)==NONE) then throw("No such device")
   else if(priceIsWrong(i,assetId,keyPrice))then throw("wrong price")
   else{
-    let issue = Issue("SmartKEy",deviceAddr+"_"+validUntil.toString(),1,0,false) # timestamp of issue is in token details
+    let issue = Issue("SmartKey",deviceAddr+"_"+validUntil.toString(),1,0,false) # timestamp of issue is in token details
     let newAssetId = calculateAssetId(issue)
     [
       issue,

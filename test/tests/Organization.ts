@@ -40,7 +40,7 @@ const Organization = (th: TestHelper) => {
         th.Organization.seed
       )
       let tx2 = await th.txSuccess(signedIssueTx2)
-      console.log('\t\taccess key id: ' + tx2.id)
+      console.log('\t\tfake access key id: ' + tx2.id)
       th.fakeOrgAccessKey = tx2.id
 
       // add token to data

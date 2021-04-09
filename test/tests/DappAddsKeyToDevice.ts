@@ -26,7 +26,7 @@ const DappAddsKeyToDevice = (th: TestHelper) => {
 
       const tokenParams3: Transactions.IIssueParams = {
         chainId: th.chainId,
-        name: 'Device key',
+        name: 'Exp Dev key',
         quantity: 1,
         decimals: 0,
         reissuable: false,
@@ -42,7 +42,7 @@ const DappAddsKeyToDevice = (th: TestHelper) => {
       // key for organization
       const tokenParams4: Transactions.IIssueParams = {
         chainId: th.chainId,
-        name: 'Device key',
+        name: 'Org key',
         quantity: 1,
         decimals: 0,
         reissuable: false,
@@ -68,7 +68,7 @@ const DappAddsKeyToDevice = (th: TestHelper) => {
       }
       const signedIssueTx5 = Transactions.issue(tokenParams5, th.Dapp.seed)
       let tx5 = await th.txSuccess(signedIssueTx5)
-      console.log('\t\torg key id: ' + tx5.id)
+      console.log('\t\tsilent key id: ' + tx5.id)
       th.silentKey = tx5.id
 
       // create key by user
