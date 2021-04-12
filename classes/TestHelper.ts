@@ -16,7 +16,8 @@ const writeFileProm = util.promisify(fs.writeFile)
 class TestHelper {
   defaultConfig: any = {
     chainId: 'A',
-    nodeUrl: 'https://srv-de-2.testnet.node.smartkeyplatform.io/',
+    nodeUrl: 'https://master.testnet.node.smartkeyplatform.io/',
+    secondNodeUrl: 'https://srv-de-2.testnet.node.smartkeyplatform.io/',
     keyPrice: 2000,
     keyDuration: 5,
     rechargeLimit: 50 * 100000,
@@ -30,6 +31,7 @@ class TestHelper {
   // wws config
   chainId: string
   nodeUrl: string
+  secondNodeUrl: string
 
   // prices etc
   devicePrice: number
@@ -80,6 +82,7 @@ class TestHelper {
 
     this.chainId = this.config.chainId
     this.nodeUrl = this.config.nodeUrl
+    this.secondNodeUrl = this.config.secondNodeUrl
     this.keyPrice = this.config.keyPrice
     this.devicePrice = this.config.devicePrice
     this.keyDuration = this.config.keyDuration
@@ -153,42 +156,58 @@ class TestHelper {
   }
 
   // utx for testing tx success
-  public async txSuccess(signedTx) {
-    let tx = await Transactions.broadcast(signedTx, this.nodeUrl)
-    await Transactions.waitForTx(tx.id, { apiBase: this.nodeUrl })
+  public async txSuccess(signedTx, useSecondNode: boolean = false) {
+    const nodeUrl = useSecondNode ? this.secondNodeUrl : this.nodeUrl
+    let tx = await Transactions.broadcast(signedTx, nodeUrl)
+    await Transactions.waitForTx(tx.id, { apiBase: nodeUrl })
     return tx
   }
 
   // utx for testing dapp failure
-  public async txDappFail(signedTx, expectedMessage) {
+  public async txDappFail(
+    signedTx,
+    expectedMessage,
+    useSecondNode: boolean = false
+  ) {
+    const nodeUrl = useSecondNode ? this.secondNodeUrl : this.nodeUrl
+
     expectedMessage = this._dapp_error_str + expectedMessage
     let message = null
     try {
-      let tx = await Transactions.broadcast(signedTx, this.nodeUrl)
-      await Transactions.waitForTx(tx.id, { apiBase: this.nodeUrl })
+      let tx = await Transactions.broadcast(signedTx, nodeUrl)
+      await Transactions.waitForTx(tx.id, { apiBase: nodeUrl })
     } catch (e) {
       message = e.message
     }
     expect(message).to.be.eq(expectedMessage)
   }
 
-  async dappValueFor(key: String) {
+  async dappValueFor(key: String, useSecondNode: boolean = false) {
+    const nodeUrl = useSecondNode ? this.secondNodeUrl : this.nodeUrl
     let resp = await fetch(
-      `${this.nodeUrl}addresses/data/${this.Dapp.address}/${key}`
+      `${nodeUrl}addresses/data/${this.Dapp.address}/${key}`
     )
     let json = await resp.json()
     return json.value
   }
 
-  async walletValueFor(wallet: Account, key: String) {
-    let resp = await fetch(
-      `${this.nodeUrl}addresses/data/${wallet.address}/${key}`
-    )
+  async walletValueFor(
+    wallet: Account,
+    key: String,
+    useSecondNode: boolean = false
+  ) {
+    const nodeUrl = useSecondNode ? this.secondNodeUrl : this.nodeUrl
+    let resp = await fetch(`${nodeUrl}addresses/data/${wallet.address}/${key}`)
     let json = await resp.json()
     return json.value
   }
 
-  async getNftFrom(wallet: Account, issuer: Account) {
+  async getNftFrom(
+    wallet: Account,
+    issuer: Account,
+    useSecondNode: boolean = false
+  ) {
+    const nodeUrl = useSecondNode ? this.secondNodeUrl : this.nodeUrl
     let resp = await fetch(
       `${this.nodeUrl}assets/nft/${wallet.address}/limit/1000`
     )

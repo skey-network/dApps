@@ -4,6 +4,7 @@ import TestHelper from '../../classes/TestHelper'
 
 const CLOSE = 'close'
 const OPEN = 'open'
+const USE_SECOND_NODE = true
 
 const Close = (th: TestHelper) => {
   describe('Close', () => {
@@ -73,7 +74,7 @@ const Close = (th: TestHelper) => {
       })
     })
 
-    describe('key closes device', function () {
+    describe('key closes device (second node)', function () {
       const invoker = th.KeyOwner
       it('invoke', async () => {
         await th.txSuccess(
@@ -93,8 +94,10 @@ const Close = (th: TestHelper) => {
               fee: 500000
             },
             invoker.seed
-          )
+          ),
+          USE_SECOND_NODE
         )
+        await th.delay(4000)
       })
 
       it('device closed', async () => {
@@ -104,6 +107,18 @@ const Close = (th: TestHelper) => {
         expect(
           await th.dappValueFor(`device_counter_${th.Device.address}`)
         ).to.eq(++th.deviceActionsCount)
+      })
+
+      it('device closed (second node)', async () => {
+        expect(
+          await th.dappValueFor(`device_${th.Device.address}`, USE_SECOND_NODE)
+        ).to.eq(CLOSE)
+        expect(
+          await th.dappValueFor(
+            `device_counter_${th.Device.address}`,
+            USE_SECOND_NODE
+          )
+        ).to.eq(th.deviceActionsCount)
       })
     })
   })
