@@ -17,23 +17,10 @@ const Open = (th: TestHelper) => {
       const invoker = th.DevOwner
       it('invoke', async () => {
         await th.txFail(
-          Transactions.invokeScript(
-            {
-              dApp: th.Dapp.address,
-              chainId: th.chainId,
-              call: {
-                function: 'deviceAction',
-                args: [
-                  { type: 'string', value: th.deviceKey },
-                  { type: 'string', value: 'open' }
-                  // { type: "string", value: invoker.address},
-                ]
-              },
-              payment: [],
-              fee: 500000
-            },
-            invoker.seed
-          ),
+          th.buildInvokeTx(th.Dapp, invoker, 'deviceAction', [
+            { type: 'string', value: th.deviceKey },
+            { type: 'string', value: 'open' }
+          ]),
           'Key not owned'
         )
       })
@@ -56,23 +43,10 @@ const Open = (th: TestHelper) => {
       const invoker = th.DevOwner
       it('invoke', async () => {
         await th.txFail(
-          Transactions.invokeScript(
-            {
-              dApp: th.Dapp.address,
-              chainId: th.chainId,
-              call: {
-                function: 'deviceAction',
-                args: [
-                  { type: 'string', value: th.userNft },
-                  { type: 'string', value: 'open' }
-                  // { type: "string", value: invoker.address},
-                ]
-              },
-              payment: [],
-              fee: 500000
-            },
-            invoker.seed
-          ),
+          th.buildInvokeTx(th.Dapp, invoker, 'deviceAction', [
+            { type: 'string', value: th.userNft },
+            { type: 'string', value: 'open' }
+          ]),
           'Wrong key issuer'
         )
       })
@@ -95,23 +69,10 @@ const Open = (th: TestHelper) => {
       const invoker = th.KeyOwner
       it('invoke', async () => {
         await th.txFail(
-          Transactions.invokeScript(
-            {
-              dApp: th.Dapp.address,
-              chainId: th.chainId,
-              call: {
-                function: 'deviceAction',
-                args: [
-                  { type: 'string', value: th.expiredDeviceKey },
-                  { type: 'string', value: 'open' }
-                  // { type: "string", value: invoker.address},
-                ]
-              },
-              payment: [],
-              fee: 500000
-            },
-            invoker.seed
-          ),
+          th.buildInvokeTx(th.Dapp, invoker, 'deviceAction', [
+            { type: 'string', value: th.expiredDeviceKey },
+            { type: 'string', value: 'open' }
+          ]),
           'Key expired'
         )
       })
@@ -134,23 +95,10 @@ const Open = (th: TestHelper) => {
       const invoker = th.KeyOwner
       it('invoke', async () => {
         await th.txSuccess(
-          Transactions.invokeScript(
-            {
-              dApp: th.Dapp.address,
-              chainId: th.chainId,
-              call: {
-                function: 'deviceAction',
-                args: [
-                  { type: 'string', value: th.deviceKey },
-                  { type: 'string', value: 'open' }
-                  // { type: "string", value: invoker.address},
-                ]
-              },
-              payment: [],
-              fee: 500000
-            },
-            invoker.seed
-          ),
+          th.buildInvokeTx(th.Dapp, invoker, 'deviceAction', [
+            { type: 'string', value: th.deviceKey },
+            { type: 'string', value: 'open' }
+          ]),
           USE_SECOND_NODE
         )
       })
@@ -183,23 +131,10 @@ const Open = (th: TestHelper) => {
       const invoker = th.Dapp
       it('invoke', async () => {
         await th.txSuccess(
-          Transactions.invokeScript(
-            {
-              dApp: th.Dapp.address,
-              chainId: th.chainId,
-              call: {
-                function: 'deviceAction',
-                args: [
-                  { type: 'string', value: th.silentKey },
-                  { type: 'string', value: 'open' }
-                  // { type: "string", value: invoker.address},
-                ]
-              },
-              payment: [],
-              fee: 900000
-            },
-            invoker.seed
-          )
+          th.buildInvokeTx(th.Dapp, invoker, 'deviceAction', [
+            { type: 'string', value: th.silentKey },
+            { type: 'string', value: 'open' }
+          ])
         )
       })
       it('device opened', async () => {

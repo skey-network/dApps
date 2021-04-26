@@ -5,6 +5,7 @@ import * as Util from 'util'
 import * as Transactions from '@waves/waves-transactions'
 import { expect } from 'chai'
 import fetch from 'node-fetch'
+import { TInvokeScriptCallArgument } from '@waves/waves-transactions/dist/transactions'
 // import fs from 'fs'
 // import util from 'util'
 const HOUR_IN_TS = 3600000
@@ -278,6 +279,26 @@ class TestHelper {
         },
         from.seed // transfer from dapp as was not transfered to device owner
       )
+    )
+  }
+  buildInvokeTx(
+    dapp: Account,
+    invoker: Account,
+    func: string,
+    args?: TInvokeScriptCallArgument<string | number>[]
+  ) {
+    return Transactions.invokeScript(
+      {
+        dApp: dapp.address,
+        chainId: this.chainId,
+        call: {
+          function: func,
+          args: args
+        },
+        payment: [],
+        fee: invoker.invokeFee
+      },
+      invoker.seed
     )
   }
 
