@@ -9,93 +9,28 @@ const DappAddsKeyToDevice = (th: TestHelper) => {
   describe('DappAddsKeyToDevice', () => {
     before('setup key by dapp', async () => {
       // create key by dapp
-      const tokenParams: Transactions.IIssueParams = {
-        chainId: th.chainId,
-        name: 'Device key',
-        quantity: 1,
-        decimals: 0,
-        reissuable: false,
-        description:
-          th.Device.address + '_' + (Date.now() + th.keyDuration * HOUR_IN_TS),
-        fee: 500000
-      }
-      const signedIssueTx = Transactions.issue(tokenParams, th.Dapp.seed)
-      let tx = await th.txSuccess(signedIssueTx)
-      console.log('\t\tdev key id: ' + tx.id)
-      th.deviceKey = tx.id
-
-      const tokenParams3: Transactions.IIssueParams = {
-        chainId: th.chainId,
-        name: 'Exp Dev key',
-        quantity: 1,
-        decimals: 0,
-        reissuable: false,
-        description:
-          th.Device.address + '_' + (Date.now() - th.keyDuration * HOUR_IN_TS),
-        fee: 500000
-      }
-      const signedIssueTx3 = Transactions.issue(tokenParams3, th.Dapp.seed)
-      let tx3 = await th.txSuccess(signedIssueTx3)
-      console.log('\t\texp dev key id: ' + tx3.id)
-      th.expiredDeviceKey = tx3.id
-
-      // key for organization
-      const tokenParams4: Transactions.IIssueParams = {
-        chainId: th.chainId,
-        name: 'Org key',
-        quantity: 1,
-        decimals: 0,
-        reissuable: false,
-        description:
-          th.Device.address + '_' + (Date.now() + th.keyDuration * HOUR_IN_TS),
-        fee: 500000
-      }
-      const signedIssueTx4 = Transactions.issue(tokenParams4, th.Dapp.seed)
-      let tx4 = await th.txSuccess(signedIssueTx4)
-      console.log('\t\torg key id: ' + tx4.id)
-      th.organizationKey = tx4.id
-
-      // key for dapp (for silent test)
-      const tokenParams5: Transactions.IIssueParams = {
-        chainId: th.chainId,
-        name: 'TestSilent',
-        quantity: 1,
-        decimals: 0,
-        reissuable: false,
-        description:
-          th.Device.address + '_' + (Date.now() + th.keyDuration * HOUR_IN_TS),
-        fee: 500000
-      }
-      const signedIssueTx5 = Transactions.issue(tokenParams5, th.Dapp.seed)
-      let tx5 = await th.txSuccess(signedIssueTx5)
-      console.log('\t\tsilent key id: ' + tx5.id)
-      th.silentKey = tx5.id
-
-      // create key by user
-      const tokenParams2: Transactions.IIssueParams = {
-        chainId: th.chainId,
-        name: 'MyKey',
-        quantity: 1,
-        decimals: 0,
-        reissuable: false,
-        description: 'Test nft token',
-        fee: 100000
-      }
-      const signedIssueTx2 = Transactions.issue(tokenParams2, th.DevOwner.seed)
-      let tx2 = await th.txSuccess(signedIssueTx2)
-      console.log('\t\twrong key id: ' + tx2.id)
-      th.userNft = tx2.id
+      th.deviceKey = await th.createKey('Device key', th.Device, th.Dapp)
+      th.expiredDeviceKey = await th.createKey(
+        'Exp Dev key',
+        th.Device,
+        th.Dapp,
+        Date.now() - th.keyDuration * HOUR_IN_TS
+      )
+      th.organizationKey = await th.createKey('OrgKey', th.Device, th.Dapp)
+      th.secondOrgKey = await th.createKey('2NdOrgKey', th.Device, th.Dapp)
+      th.silentKey = await th.createKey('TestSilent', th.Device, th.Dapp)
+      th.userNft = await th.createKey('TestFakeKey', th.Device, th.DevOwner)
 
       // add right key call
       th.addDeviceKeyCall = {
         function: 'addKey',
-        args: [{ type: 'string', value: tx.id }]
+        args: [{ type: 'string', value: th.deviceKey }]
       }
     })
 
     describe('random user tries to add key', function () {
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Device.address,
@@ -121,7 +56,7 @@ const DappAddsKeyToDevice = (th: TestHelper) => {
 
     describe('wrong token issuer', function () {
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Device.address,
@@ -148,7 +83,7 @@ const DappAddsKeyToDevice = (th: TestHelper) => {
 
     describe('not owned device', function () {
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Device.address,
@@ -276,43 +211,10 @@ const DappAddsKeyToDevice = (th: TestHelper) => {
 
     // for next test
     after('transfer created keys', async () => {
-      await th.txSuccess(
-        Transactions.transfer(
-          {
-            chainId: th.chainId,
-            amount: 1,
-            assetId: th.deviceKey,
-            fee: 500000,
-            recipient: th.KeyOwner.address
-          },
-          th.Dapp.seed // transfer from dapp as was not transfered to device owner
-        )
-      )
-      await th.txSuccess(
-        // key for organization
-        Transactions.transfer(
-          {
-            chainId: th.chainId,
-            amount: 1,
-            assetId: th.organizationKey,
-            fee: 500000,
-            recipient: th.Organization.address
-          },
-          th.Dapp.seed // transfer from dapp as was not transfered to device owner
-        )
-      )
-      await th.txSuccess(
-        Transactions.transfer(
-          {
-            chainId: th.chainId,
-            amount: 1,
-            assetId: th.expiredDeviceKey,
-            fee: 500000,
-            recipient: th.KeyOwner.address
-          },
-          th.Dapp.seed // transfer from dapp as was not transfered to device owner
-        )
-      )
+      th.sendKey(th.deviceKey, th.Dapp, th.KeyOwner)
+      th.sendKey(th.expiredDeviceKey, th.Dapp, th.KeyOwner)
+      th.sendKey(th.organizationKey, th.Dapp, th.Organization)
+      th.sendKey(th.secondOrgKey, th.Dapp, th.Organization)
     })
   })
 }

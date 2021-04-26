@@ -88,7 +88,7 @@ const Organization = (th: TestHelper) => {
 
     describe('wrong token', () => {
       it('no access with wrong token', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Organization.address,

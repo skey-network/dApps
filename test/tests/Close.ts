@@ -11,7 +11,7 @@ const Close = (th: TestHelper) => {
     describe('not owned key', function () {
       const invoker = th.DevOwner
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Dapp.address,
@@ -44,7 +44,7 @@ const Close = (th: TestHelper) => {
     describe('not a key', function () {
       const invoker = th.DevOwner
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Dapp.address,
@@ -62,7 +62,7 @@ const Close = (th: TestHelper) => {
             },
             invoker.seed
           ),
-          'Not a device key'
+          'Wrong key issuer'
         )
       })
 

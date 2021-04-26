@@ -25,6 +25,7 @@
     "@waves/ts-lib-crypto": "^1.4.3",
     "@waves/waves-transactions": "^4.1.2",
     "chalk": "^4.1.0",
+    "dotenv": "^8.2.0",
     "mocha": "^8.2.1",
     "node-fetch": "^2.6.1",
     "surfboard": "^0.1.0"

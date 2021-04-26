@@ -40,7 +40,7 @@ const OpenAsOrganization = (th: TestHelper) => {
       const invoker = th.OrganizationUser
       const device = th.Device.address
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Dapp.address,
@@ -85,7 +85,7 @@ const OpenAsOrganization = (th: TestHelper) => {
         const invoker = th.Dummy
         const device = th.Device.address
         it('invoke', async () => {
-          await th.txDappFail(
+          await th.txFail(
             Transactions.invokeScript(
               {
                 dApp: th.Dapp.address,

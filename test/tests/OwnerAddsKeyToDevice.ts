@@ -23,7 +23,7 @@ const OwnerAddsKeyToDevice = (th: TestHelper) => {
 
     describe('wrong token issuer', function () {
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Device.address,
@@ -50,7 +50,7 @@ const OwnerAddsKeyToDevice = (th: TestHelper) => {
 
     describe('not owned device', function () {
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Device.address,
@@ -74,7 +74,7 @@ const OwnerAddsKeyToDevice = (th: TestHelper) => {
 
     describe('banned key', function () {
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Device.address,

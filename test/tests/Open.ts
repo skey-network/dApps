@@ -16,7 +16,7 @@ const Open = (th: TestHelper) => {
     describe('not owned key', function () {
       const invoker = th.DevOwner
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Dapp.address,
@@ -55,7 +55,7 @@ const Open = (th: TestHelper) => {
     describe('not a key', function () {
       const invoker = th.DevOwner
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Dapp.address,
@@ -73,7 +73,7 @@ const Open = (th: TestHelper) => {
             },
             invoker.seed
           ),
-          'Not a device key'
+          'Wrong key issuer'
         )
       })
 
@@ -94,7 +94,7 @@ const Open = (th: TestHelper) => {
     describe('expired key cant open device', function () {
       const invoker = th.KeyOwner
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Dapp.address,

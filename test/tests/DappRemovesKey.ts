@@ -10,7 +10,7 @@ const DappRemovesKey = (th: TestHelper) => {
   describe('DappRemovesKey', () => {
     describe('not an owner/dapp', function () {
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Device.address,
@@ -64,7 +64,7 @@ const DappRemovesKey = (th: TestHelper) => {
     describe('removed key cant open device', function () {
       const invoker = th.Dummy
       it('invoke', async () => {
-        await th.txDappFail(
+        await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Dapp.address,

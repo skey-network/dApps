@@ -7,6 +7,8 @@ import { expect } from 'chai'
 import fetch from 'node-fetch'
 // import fs from 'fs'
 // import util from 'util'
+const HOUR_IN_TS = 3600000
+
 const util = require('util') // as there is problem with imports...
 const fs = require('fs')
 
@@ -15,14 +17,20 @@ const writeFileProm = util.promisify(fs.writeFile)
 
 class TestHelper {
   defaultConfig: any = {
-    chainId: 'A',
-    nodeUrl: 'https://master.testnet.node.smartkeyplatform.io/',
-    secondNodeUrl: 'https://srv-de-2.testnet.node.smartkeyplatform.io/',
+    chainId: 'R',
+    // chainId: 'C',
+    nodeUrl: 'http://127.0.0.1:6869/',
+    // nodeUrl: 'https://master.testnet.node.smartkeyplatform.io/',
+    secondNodeUrl: 'http://127.0.0.1:6869/',
+    // secondNodeUrl: 'https://srv-de-2.testnet.node.smartkeyplatform.io/',
     keyPrice: 2000,
     keyDuration: 5,
     rechargeLimit: 50 * 100000,
-    bankSeed:
-      '***REMOVED***'
+    // bankSeed:
+    //   '***REMOVED***'
+    // bankSeed: '***REMOVED***'
+    bankSeed: process.env.BANK!
+    //'***REMOVED***'
   }
   config: any = {}
   _execFile = Util.promisify(require('child_process').execFile)
@@ -39,12 +47,16 @@ class TestHelper {
   keyDuration: number
   rechargeLimit: number
 
-  // dynamic test variables
-  userNft: string
+  // keys
   deviceKey: string
+  silentKey: string
   requestedDeviceKey: string
   expiredDeviceKey: string
-  silentKey: string
+  userNft: string
+  organizationKey: string
+  secondOrgKey: string
+
+  // dynamic test variables
   deviceActionsCount: number = 0
 
   // calls
@@ -60,10 +72,8 @@ class TestHelper {
   keysForTest: string[]
 
   // organization
-  organizationKey: string
   orgAccessKey: string
   fakeOrgAccessKey: string
-
   balance: BalanceTracker
 
   // accounts
@@ -99,10 +109,15 @@ class TestHelper {
 
     this.Dapp = new Account(
       '***REMOVED*** input',
-      this.chainId
+      this.chainId,
+      true
     )
-    console.log('Dapp:', this.Dapp.address)
     // this.Dapp = this.createAndLogAccount('Dapp')
+    console.log('Dapp:', this.Dapp.address)
+    // this.Device = new Account(
+    //   '***REMOVED*** program',
+    //   this.chainId
+    // )
     this.Device = this.createAndLogAccount('Device')
     this.KeyOwner = this.createAndLogAccount('KeyOwner')
     this.Dummy = this.createAndLogAccount('Dummy')
@@ -164,7 +179,7 @@ class TestHelper {
   }
 
   // utx for testing dapp failure
-  public async txDappFail(
+  public async txFail(
     signedTx,
     expectedMessage,
     useSecondNode: boolean = false
@@ -216,6 +231,54 @@ class TestHelper {
       .filter((x) => x.issuer == issuer.address)
       .map((x) => x.assetId)
     return filtered
+  }
+
+  async hasNft(account: Account, nft: string, useSecondNode: boolean = false) {
+    const nodeUrl = useSecondNode ? this.secondNodeUrl : this.nodeUrl
+    let resp = await fetch(
+      `${this.nodeUrl}assets/nft/${account.address}/limit/1000`
+    )
+    let json = await resp.json()
+    return json.find((x) => x.assetId == nft) !== undefined
+  }
+
+  async createKey(
+    name: string,
+    device: Account,
+    supplier: Account,
+    validTo?: number
+  ) {
+    const tokenParams: Transactions.IIssueParams = {
+      chainId: this.chainId,
+      name: name,
+      quantity: 1,
+      decimals: 0,
+      reissuable: false,
+      description:
+        device.address +
+        '_' +
+        (validTo ?? Date.now() + this.keyDuration * HOUR_IN_TS),
+      fee: 500000
+    }
+    const signedIssueTx = Transactions.issue(tokenParams, supplier.seed)
+    let tx = await this.txSuccess(signedIssueTx)
+    console.log(`\t\tkey "${name}" id:  ${tx.id}`)
+    return tx.id
+  }
+
+  async sendKey(key: string, from: Account, to: Account) {
+    await this.txSuccess(
+      Transactions.transfer(
+        {
+          chainId: this.chainId,
+          amount: 1,
+          assetId: key,
+          fee: 500000,
+          recipient: to.address
+        },
+        from.seed // transfer from dapp as was not transfered to device owner
+      )
+    )
   }
 
   makeid(length) {

@@ -1,3 +1,6 @@
+import { config } from 'dotenv'
+config()
+
 import * as Transactions from '@waves/waves-transactions'
 import * as Crypto from '@waves/ts-lib-crypto'
 import Account from '../classes/Account'
@@ -22,6 +25,7 @@ import OwnerRequestsKey from './tests/OwnerRequestsKey'
 import OwnerAddsKeyToDevice from './tests/OwnerAddsKeyToDevice'
 import DappUnbansKey from './tests/DappUnbansKey'
 import Organization from './tests/Organization'
+import RemoveKeyFromOrg from './tests/RemoveKeyFromOrg'
 
 const wvs = 10 ** 8
 const waves = (wavlets) => wavlets * wvs
@@ -89,3 +93,6 @@ OwnerAddsKeyToDevice(th)
 
 // Dapp unbans key
 DappUnbansKey(th)
+
+// Remove key from org
+RemoveKeyFromOrg(th)

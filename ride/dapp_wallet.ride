@@ -205,7 +205,8 @@ func deviceActionWithKey(i: Invocation, keyID: String, action: String) = {
   let deviceStr = toBase58String(device.bytes)
   let recharge = getExtNumberByKey(rechargeLimitKey)
 
-  if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
+  if(keyInfo.issuer != this) then throw("Wrong key issuer")
+  else if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
   else if(deviceNotWhitelistedKey(device, keyID)) then throw("Key not whitelisted")
   else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")
   else if(keyTimestampInvalid(keyInfo)) then throw("Key expired")
