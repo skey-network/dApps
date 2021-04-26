@@ -32,47 +32,17 @@ const AddDevice = (th: TestHelper) => {
       }
     })
 
-    describe('not a dapp', () => {
-      it('invoke', async () => {
-        await th.txFail(
-          Transactions.invokeScript(
-            {
-              dApp: th.Dapp.address,
-              chainId: th.chainId,
-              call: th.addDeviceCall,
-              payment: [],
-              fee: 900000
-            },
-            th.Dummy.seed
-          ),
-          'Not permitted'
-        )
-      })
-
-      it('no asset change', async () => {
-        await th.balance.expectChange(th.Dummy, 0)
-      })
-
-      it('device not added', async () => {
-        expect(await th.dappValueFor(`device_${th.Device.address}`)).to.eq(
-          undefined
-        )
-        expect(
-          await th.dappValueFor(`device_counter_${th.Device.address}`)
-        ).to.eq(undefined)
-      })
-    })
-
     describe('adds device', () => {
       it('invoke', async () => {
         await th.txSuccess(
-          Transactions.invokeScript(
+          Transactions.data(
             {
-              dApp: th.Dapp.address,
+              data: [
+                { key: `device_${th.Device.address}`, value: CLOSE },
+                { key: `device_counter_${th.Device.address}`, value: 0 }
+              ],
               chainId: th.chainId,
-              call: th.addDeviceCall,
-              payment: [],
-              fee: 900000
+              fee: 500000
             },
             th.Dapp.seed
           )
@@ -86,24 +56,6 @@ const AddDevice = (th: TestHelper) => {
         expect(
           await th.dappValueFor(`device_counter_${th.Device.address}`)
         ).to.eq(0)
-      })
-    })
-
-    describe('same device second time', () => {
-      it('invoke', async () => {
-        await th.txFail(
-          Transactions.invokeScript(
-            {
-              dApp: th.Dapp.address,
-              chainId: th.chainId,
-              call: th.addDeviceCall,
-              payment: [],
-              fee: 900000
-            },
-            th.Dapp.seed
-          ),
-          'Device already added'
-        )
       })
     })
   })

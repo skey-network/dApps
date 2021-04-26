@@ -16,9 +16,11 @@ let rechargeLimitKey = "recharge_limit"
 let actions = [OPEN, CLOSE]
 let deviceInitialCounter = 0
 #let KEY_DAPP=0 - use issuer
-let keyDevice = 0
-let keyValidUntil = 1
+let keyDeviceIndex = 0
+let keyValidUntilIndex = 1
+let keyVersionIndex = 2
 let oneMinute = 60000 # in miliseconds
+let version1 = "v1"
 
 
 ################ utx etc
@@ -104,11 +106,15 @@ let oneMinute = 60000 # in miliseconds
 
 
   func deviceFromKey(key: Asset)={
-    let device = key.description.split("_")[keyDevice]
+    let device = key.description.split("_")[keyDeviceIndex]
     match (addressFromString(device)){
       case t:Address => t
       case _ => throw("Not a device key")
     }
+  }
+
+   func versionFromKey(key: Asset)={
+    key.description.split("_")[keyVersionIndex]
   }
 
   func getAssetInfo(asset:ByteVector)={
@@ -119,7 +125,7 @@ let oneMinute = 60000 # in miliseconds
   }
 
   func keyTimestampInvalid(key:Asset)={
-    let timestamp = parseIntValue(key.description.split("_")[keyValidUntil])
+    let timestamp = parseIntValue(key.description.split("_")[keyValidUntilIndex])
     timestamp < lastBlock.timestamp
   }
 
@@ -202,10 +208,12 @@ let oneMinute = 60000 # in miliseconds
 func deviceActionWithKey(i: Invocation, keyID: String, action: String) = {
   let keyInfo = getAssetInfo(fromBase58String(keyID))
   let device = deviceFromKey(keyInfo)
+  # let keyVersion = versionFromKey(keyInfo)
   let deviceStr = toBase58String(device.bytes)
   let recharge = getExtNumberByKey(rechargeLimitKey)
 
   if(keyInfo.issuer != this) then throw("Wrong key issuer")
+  # else if(keyVersion != version1) then throw("Wrong key version")
   else if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
   else if(deviceNotWhitelistedKey(device, keyID)) then throw("Key not whitelisted")
   else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")
@@ -223,57 +231,6 @@ func deviceActionWithKey(i: Invocation, keyID: String, action: String) = {
 func verify() = {
     sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
 }
-
-### TO REMOVE
-#
-# Write device entries:
-# - device_{address}: "closed"   # desired action of device
-# - device_counter_{address}: 0  # counter of action changes, triggers state change event from oracle
-#
-@Callable(i)
-func addDevice(deviceAddr: String) = {
-  if(i.caller!=this)then throw("Not permitted")
-  else if(deviceActionValue(deviceAddr)!=NONE)then throw("Device already added")
-  else {
-    [
-     StringEntry(deviceActionKey(deviceAddr), CLOSE),
-     IntegerEntry(deviceActionCounterKey(deviceAddr), deviceInitialCounter)
-    ]
-  }
-}
-
-
-### TO REMOVE
-#
-# Write device entries:
-# - user{address}: "active"
-#
-@Callable(i)
-func addUser(deviceAddr: String) = {
-  if(i.caller!=this)then throw("Not permitted")
-  else {
-    [
-      StringEntry(userStatusKey(deviceAddr), ACTIVE)
-    ]
-  }
-}
-
-### TO REMOVE
-#
-# Write device entries:
-# - user{address}: "active"
-#
-@Callable(i)
-func removeUser(deviceAddr: String) = {
-  if(i.caller!=this)then throw("Not permitted")
-  else {
-    [
-      DeleteEntry(userStatusKey(deviceAddr))
-    ]
-  }
-}
-
-
 
 
 ###
@@ -333,7 +290,7 @@ func requestKey(deviceAddr: String, duration: Int) = {
   else if(deviceActionKey(deviceAddr)==NONE) then throw("No such device")
   else if(priceIsWrong(i,assetId,keyPrice))then throw("wrong price")
   else{
-    let issue = Issue("SmartKey",deviceAddr+"_"+validUntil.toString(),1,0,false) # timestamp of issue is in token details
+    let issue = Issue("SmartKey",deviceAddr+"_"+validUntil.toString()+"_"+version1,1,0,false) # timestamp of issue is in token details
     let newAssetId = calculateAssetId(issue)
     [
       issue,
