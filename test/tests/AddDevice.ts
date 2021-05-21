@@ -13,7 +13,7 @@ const AddDevice = (th: TestHelper) => {
           {
             data: [
               { key: 'owner', value: th.DevOwner.address },
-              { key: 'dapp', value: th.Dapp.address },
+              { key: 'supplier', value: th.Dapp.address },
               { key: 'key_price', value: th.keyPrice },
               { key: 'type', value: 'testDev' }
             ],

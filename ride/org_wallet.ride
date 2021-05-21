@@ -5,7 +5,7 @@
 let NONE = "none"
 let ACTIVE = "active"
 let INACTIVE = "inactive"
-let dappKey = "dapp"
+let supplierKey = "supplier"
 let ownerKey = "owner"
 let keyDevice = 0
 
