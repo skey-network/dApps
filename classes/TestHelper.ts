@@ -6,12 +6,12 @@ import * as Transactions from '@waves/waves-transactions'
 import { expect } from 'chai'
 import fetch from 'node-fetch'
 import { TInvokeScriptCallArgument } from '@waves/waves-transactions/dist/transactions'
-// import fs from 'fs'
+import * as fs from 'fs'
 // import util from 'util'
 const HOUR_IN_TS = 3600000
 
 const util = require('util') // as there is problem with imports...
-const fs = require('fs')
+//const fs = require('fs')
 
 const readFileProm = util.promisify(fs.readFile)
 const writeFileProm = util.promisify(fs.writeFile)
@@ -150,14 +150,26 @@ class TestHelper {
 
   public async deployDapp(seed: string) {
     await this.deploy(seed, 'scripts/dapp_wallet.deploy.js')
+    this.storeCompiledScript(
+      'supplier.txt',
+      await this.getScriptFrom(new Account(seed, this.config.chainId).address)
+    )
   }
 
   public async deployDevice(seed: string) {
     await this.deploy(seed, 'scripts/device_wallet.deploy.js')
+    this.storeCompiledScript(
+      'device.txt',
+      await this.getScriptFrom(new Account(seed, this.config.chainId).address)
+    )
   }
 
   public async deployOrg(seed: string) {
     await this.deploy(seed, 'scripts/org_wallet.deploy.js')
+    this.storeCompiledScript(
+      'organization.txt',
+      await this.getScriptFrom(new Account(seed, this.config.chainId).address)
+    )
   }
 
   async deploy(seed: string, file: string) {
@@ -281,6 +293,19 @@ class TestHelper {
       )
     )
   }
+
+  async getScriptFrom(address: string) {
+    const resp = await fetch(
+      `http://localhost:6869/addresses/scriptInfo/${address}`
+    )
+    let json = await resp.json()
+    return json.script
+  }
+
+  async storeCompiledScript(name: string, script: string) {
+    fs.writeFileSync(`./compiled/${name}`, script)
+  }
+
   buildInvokeTx(
     dapp: Account,
     invoker: Account,
