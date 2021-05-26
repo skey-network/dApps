@@ -13,7 +13,7 @@ let ownerKey = "owner"
 let organizationKey = "org_"
 let organizationUserKey = "user_"
 let rechargeLimitKey = "recharge_limit"
-let actions = [OPEN, CLOSE]
+# let actions = [OPEN, CLOSE]
 let deviceInitialCounter = 0
 #let KEY_DAPP=0 - use issuer
 let keyDeviceIndex = 0
@@ -196,12 +196,12 @@ let version1 = "v1"
 ################# utx - checks
   
   # checks if action is on predefined list
-  func notAllowedDeviceAction(action:String)={
-    match (actions.indexOf(action)){
-      case a:Int => false
-      case _ => true
-    }
-  }
+  # func notAllowedDeviceAction(action:String)={
+  #   match (actions.indexOf(action)){
+  #     case a:Int => false
+  #     case _ => true
+  #   }
+  # }
 ################ public functions
 
 ### open device func
@@ -216,7 +216,7 @@ func deviceActionWithKey(i: Invocation, keyID: String, action: String) = {
   # else if(keyVersion != version1) then throw("Wrong key version")
   else if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
   else if(deviceNotWhitelistedKey(device, keyID)) then throw("Key not whitelisted")
-  else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")
+  # else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")
   else if(keyTimestampInvalid(keyInfo)) then throw("Key expired")
   else {
     let changes = [
