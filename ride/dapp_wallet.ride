@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 4 #-}
+{-# STDLIB_VERSION 5 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -13,6 +13,7 @@ let ownerKey = "owner"
 let organizationKey = "org_"
 let organizationUserKey = "user_"
 let rechargeLimitKey = "recharge_limit"
+let dappFatherKey = "dapp_father"
 # let actions = [OPEN, CLOSE]
 let deviceInitialCounter = 0
 #let KEY_DAPP=0 - use issuer
@@ -174,12 +175,14 @@ let version1 = "v1"
   }
 
   func rechargeIfNeeded(account:Address)={
-    let recharge = getExtNumberByKey(rechargeLimitKey)
-    if(recharge > 0 && wavesBalance(account).regular < recharge && recharge != 0) then {
-      ScriptTransfer(account, recharge, unit) :: []
-    }else{
-      []
-    }
+    # let recharge = getExtNumberByKey(rechargeLimitKey)
+    let dappFather = getStrByKey(dappFatherKey)
+    # if(recharge > 0 && wavesBalance(account).regular < recharge && recharge != 0) then {
+      invoke(addressFromStringValue(dappFather), "refill", [toBase58String(account.bytes)], [])!=unit 
+      # ScriptTransfer(account, recharge, unit) :: []
+    # } else {
+      #  false
+    # }
   }
 
   func organizationWhitelisted(organization:String)={
@@ -223,15 +226,9 @@ func deviceActionWithKey(i: Invocation, keyID: String, action: String) = {
       StringEntry(deviceActionKey(deviceStr), action),
       IntegerEntry(deviceActionCounterKey(deviceStr), deviceActionCounterValue(deviceStr) + 1)
     ] 
-    changes ++ rechargeIfNeeded(i.caller)
+    (changes, rechargeIfNeeded(i.caller))
   }
 }
-
-@Verifier(tx)
-func verify() = {
-    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
-}
-
 
 ###
 #
@@ -274,7 +271,7 @@ func transferKey(recipient: String) ={
   let keyInfo = getAssetInfoFromPayment(i) # throws errors when wrong issuer or key is expired
   let recipientAddr = addressFromStringValue(recipient)
   let transfer = ScriptTransfer(recipientAddr,1,keyInfo.id)::[]
-  transfer ++ rechargeIfNeeded(recipientAddr) ++ rechargeIfNeeded(i.caller) # transfer and recharge if needed
+  (transfer, rechargeIfNeeded(recipientAddr) && rechargeIfNeeded(i.caller)) # transfer and recharge if needed
 }
 
 @Callable(i)
@@ -292,9 +289,9 @@ func requestKey(deviceAddr: String, duration: Int) = {
   else{
     let issue = Issue("SmartKey",deviceAddr+"_"+validUntil.toString()+"_"+version1,1,0,false) # timestamp of issue is in token details
     let newAssetId = calculateAssetId(issue)
-    [
+    ([
       issue,
       ScriptTransfer(i.caller,1,newAssetId)
-    ] ++ rechargeIfNeeded(i.caller)
+    ], rechargeIfNeeded(i.caller))
   } 
 }

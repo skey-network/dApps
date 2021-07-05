@@ -10,7 +10,7 @@ import { balance } from '@waves/waves-transactions/dist/nodeInteraction'
 import { IInvokeScriptCall } from '@waves/waves-transactions/dist/transactions'
 import TestHelper from '../classes/TestHelper'
 import { Test } from 'mocha'
-import SetupDapp from './tests/SetupDapp'
+import SetupDapps from './tests/SetupDapps'
 import AddDevice from './tests/AddDevice'
 import Open from './tests/Open'
 import Close from './tests/Close'
@@ -26,6 +26,7 @@ import OwnerAddsKeyToDevice from './tests/OwnerAddsKeyToDevice'
 import DappUnbansKey from './tests/DappUnbansKey'
 import Organization from './tests/Organization'
 import RemoveKeyFromOrg from './tests/RemoveKeyFromOrg'
+import UnauthorizedByFather from './tests/UnauthorizedByFather'
 
 const wvs = 10 ** 8
 const waves = (wavlets) => wavlets * wvs
@@ -42,7 +43,10 @@ it('setup wallets', async () => {
     transfers: [
       { amount: 100000000, recipient: th.Device.address },
       { amount: 1000000000, recipient: th.Dapp.address },
-      { amount: 1000000000, recipient: th.Organization.address }
+      { amount: 1000000000, recipient: th.DappFather.address },
+      { amount: 1000000000, recipient: th.Organization.address },
+      { amount: 1000000000, recipient: th.unauthorizedByFather.Dapp.address },
+      { amount: 1000000000, recipient: th.unauthorizedByFather.Device.address }
     ]
   }
 
@@ -50,7 +54,7 @@ it('setup wallets', async () => {
 })
 
 // Setup dapp [issue token, write to data, pricing to data, send assets, set script]
-SetupDapp(th)
+SetupDapps(th)
 
 // Setup organization [set script]
 Organization(th)
@@ -96,3 +100,6 @@ DappUnbansKey(th)
 
 // Remove key from org
 RemoveKeyFromOrg(th)
+
+// Unauthorized by dapp father - no recharge
+UnauthorizedByFather(th)

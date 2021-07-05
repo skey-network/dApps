@@ -79,7 +79,14 @@ class TestHelper {
 
   // accounts
   Bank: Account
+  DappFather: Account
   DevOwner: Account
+  unauthorizedByFather: {
+    Dapp?: Account
+    Device?: Account
+    KeyOwner?: Account
+    deviceKey?: string
+  } = {}
   Dapp: Account
   Device: Account
   KeyOwner: Account
@@ -108,6 +115,7 @@ class TestHelper {
     this.Bank = new Account(this.config.bankSeed, this.config.chainId)
     this.DevOwner = this.createAndLogAccount('DevOwner')
 
+    this.DappFather = this.createAndLogAccount('DappFather')
     this.Dapp = new Account(
       '***REMOVED*** input',
       this.chainId,
@@ -127,6 +135,12 @@ class TestHelper {
     this.OrganizationUserByKey = this.createAndLogAccount(
       'OrganizationUserByKey'
     )
+    this.unauthorizedByFather.Dapp =
+      this.createAndLogAccount('unathorized Dapp')
+    this.unauthorizedByFather.Device =
+      this.createAndLogAccount('unathorized Device')
+    this.unauthorizedByFather.KeyOwner =
+      this.createAndLogAccount('unathorized User')
   }
 
   public createAndLogAccount(name: string) {
@@ -152,6 +166,13 @@ class TestHelper {
     await this.deploy(seed, 'scripts/dapp_wallet.deploy.js')
     this.storeCompiledScript(
       'supplier.txt',
+      await this.getScriptFrom(new Account(seed, this.config.chainId).address)
+    )
+  }
+  public async deployDappFather(seed: string) {
+    await this.deploy(seed, 'scripts/father_wallet.deploy.js')
+    this.storeCompiledScript(
+      'father.txt',
       await this.getScriptFrom(new Account(seed, this.config.chainId).address)
     )
   }

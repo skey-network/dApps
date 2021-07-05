@@ -1,0 +1,59 @@
+{-# STDLIB_VERSION 5 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let refillAmountKey = "refill_amount" 
+let supplier="supplier_"
+let org="org_"
+let ACTIVE = "active"
+let minFee = 100000
+
+
+func activeAsSupplier(strAddr:String)={
+  match (getString(supplier+strAddr)) {
+      case t:String => t==ACTIVE 
+      case _ => false
+    } 
+}
+
+func activeAsOrg(strAddr:String)={
+  match (getString(org+strAddr)) {
+      case t:String => t==ACTIVE 
+      case _ => false
+    } 
+}
+
+func getRefillAmount()={
+  match (getInteger(refillAmountKey)) {
+      case t:Int => t 
+      case _ => minFee
+    }  
+}
+
+func shouldRefill(addr:Address, refillAmount:Int)={
+  let balance = wavesBalance(addr).available
+  balance<refillAmount
+}
+
+@Callable(i)
+func refill(targetAddrStr:String) = {
+  let callerStrAddr = toBase58String(i.caller.bytes)
+  let targetAddr = addressFromStringValue(targetAddrStr)
+  let refillAmount = getRefillAmount()
+  let refill = shouldRefill(targetAddr, refillAmount)
+  if(activeAsSupplier(callerStrAddr)||activeAsOrg(callerStrAddr)) then {
+    if(!refill)then {
+      ([],false)
+    }else{
+    # if user cash is below some level
+    ([
+      ScriptTransfer(targetAddr,refillAmount, unit)
+    ],true)
+    }
+  } else ([],false) #throw("supplier not auhorized")
+
+}
+
+@Verifier(tx)
+func verify() = sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+        
