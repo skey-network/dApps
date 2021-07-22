@@ -64,10 +64,12 @@ let ownerKey = "owner"
   }
 
   
-  func updData(acu:List[StringEntry|IntegerEntry|DeleteEntry],item:String)={
+  func updData(acu:List[StringEntry|IntegerEntry|DeleteEntry|BooleanEntry],item:String)={
     let expl = item.split("#")
     if(expl[0]=="set") then {
-      if(expl[1]=="string") then {
+      if(expl[1]=="bool") then {
+        BooleanEntry(expl[2],(expl[3]=="true"))::acu
+      }else if(expl[1]=="string") then {
         StringEntry(expl[2],expl[3])::acu
       }else{  #if(expl[1]=="int") then {
         IntegerEntry(expl[2],parseIntValue(expl[3]))::acu

@@ -68,6 +68,8 @@ const UpdateDeviceData = (th: TestHelper) => {
                     type: 'list',
                     value: [
                       { type: 'string', value: 'set#int#test_here#42' },
+                      { type: 'string', value: 'set#bool#test_bool#true' },
+                      { type: 'string', value: 'set#bool#test_bool2#false' },
                       { type: 'string', value: 'delete#test_key_to_rem' }
                     ]
                   }
@@ -83,6 +85,8 @@ const UpdateDeviceData = (th: TestHelper) => {
 
       it('data not changed', async () => {
         expect(await th.walletValueFor(th.Device, `test_here`)).to.eq(42)
+        expect(await th.walletValueFor(th.Device, `test_bool`)).to.eq(true)
+        expect(await th.walletValueFor(th.Device, `test_bool2`)).to.eq(false)
         expect(await th.walletValueFor(th.Device, `test_key_to_rem`)).to.eq(
           undefined
         )
