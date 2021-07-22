@@ -18,11 +18,11 @@ const writeFileProm = util.promisify(fs.writeFile)
 
 class TestHelper {
   defaultConfig: any = {
-    chainId: 'R',
+    chainId: process.env.CHAIN,
     // chainId: 'C',
-    nodeUrl: 'http://127.0.0.1:6869/',
+    nodeUrl: process.env.NODE1,
     // nodeUrl: 'https://master.testnet.node.smartkeyplatform.io/',
-    secondNodeUrl: 'http://127.0.0.1:6869/',
+    secondNodeUrl: process.env.NODE2,
     // secondNodeUrl: 'https://srv-de-2.testnet.node.smartkeyplatform.io/',
     keyPrice: 2000,
     keyDuration: 5,
@@ -123,11 +123,11 @@ class TestHelper {
     )
     // this.Dapp = this.createAndLogAccount('Dapp')
     console.log('Dapp:', this.Dapp.address)
-    // this.Device = new Account(
-    //   '***REMOVED*** program',
-    //   this.chainId
-    // )
-    this.Device = this.createAndLogAccount('Device')
+    this.Device = new Account(
+      '***REMOVED*** program',
+      this.chainId
+    )
+    // this.Device = this.createAndLogAccount('Device')
     this.KeyOwner = this.createAndLogAccount('KeyOwner')
     this.Dummy = this.createAndLogAccount('Dummy')
     this.Organization = this.createAndLogAccount('Organization')
@@ -316,9 +316,7 @@ class TestHelper {
   }
 
   async getScriptFrom(address: string) {
-    const resp = await fetch(
-      `http://localhost:6869/addresses/scriptInfo/${address}`
-    )
+    const resp = await fetch(`${this.nodeUrl}addresses/scriptInfo/${address}`)
     let json = await resp.json()
     return json.script
   }
