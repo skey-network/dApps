@@ -149,7 +149,7 @@ func removeKey(keyID: String) = {
 # Updates data in device (max 15 entries at time) by item schema: 
 # action#type#key#value
 # actions: set/delete
-# type: string,int
+# type: string,int,bool
 # key: key for data entry
 # value: value for entry (ignored for delete)
 @Callable(i)
