@@ -15,7 +15,9 @@ const AddDevice = (th: TestHelper) => {
               { key: 'owner', value: th.DevOwner.address },
               { key: 'supplier', value: th.Dapp.address },
               { key: 'key_price', value: th.keyPrice },
-              { key: 'type', value: 'testDev' }
+              { key: 'type', value: 'testDev' },
+              { key: 'active', value: true },
+              { key: 'connected', value: true }
             ],
             chainId: th.chainId,
             fee: 500000

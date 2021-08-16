@@ -26,6 +26,7 @@ import OwnerAddsKeyToDevice from './tests/OwnerAddsKeyToDevice'
 import DappUnbansKey from './tests/DappUnbansKey'
 import Organization from './tests/Organization'
 import RemoveKeyFromOrg from './tests/RemoveKeyFromOrg'
+import OpenActiveConnected from './tests/OpenActiveConnected'
 
 const wvs = 10 ** 8
 const waves = (wavlets) => wavlets * wvs
@@ -113,6 +114,8 @@ DappAddsManyKeysToDevice(th)
 
 // // Open device
 Open(th)
+
+OpenActiveConnected(th)
 
 // Close device
 Close(th)
