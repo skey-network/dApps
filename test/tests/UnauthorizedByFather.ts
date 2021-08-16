@@ -36,7 +36,9 @@ const UnauthorizedByFather = (th: TestHelper) => {
                 { key: 'owner', value: selected.KeyOwner.address },
                 { key: 'supplier', value: selected.Dapp.address },
                 { key: 'key_price', value: th.keyPrice },
-                { key: 'type', value: 'testDev' }
+                { key: 'type', value: 'testDev' },
+                { key: 'active', value: true },
+                { key: 'connected', value: true }
               ],
               chainId: th.chainId,
               fee: 500000

@@ -7,6 +7,8 @@ let BANNED = "banned" # do we need it?
 let ACTIVE = "active"
 let CLOSE = "close"
 let OPEN = "open"
+let deviceActiveKey = "active"
+let deviceConnectedKey = "connected"
 let assetKey = "asset"
 let keyPriceKey = "key_price"
 let ownerKey = "owner"
@@ -50,6 +52,12 @@ let version1 = "v1"
       case _ => NONE
     }
   }
+  func getExtBoolByKey(addr: Address, key: String) = {
+    match getBoolean(addr,key){
+      case a:Boolean => a
+      case _ => false
+    }
+  }
   func getAssetId()={
     fromBase58String(getStrByKey(assetKey))
   }
@@ -90,13 +98,6 @@ let version1 = "v1"
   func nftValue(nft:String)={
     getStrByKey(nftKey(nft))
   }
-
-# ################# device wallet - get owner
-#   # values: "none", address
-#   func getDeviceOwnerAddressValue(addr:Address)={
-#     getExtStrByKey(addr, "owner")
-#   }
-
 
 ################### returns device if key is whitelisted, otherwise none
   func deviceNotWhitelistedKey(device: Address, key: String)={
@@ -215,10 +216,14 @@ func deviceActionWithKey(i: Invocation, keyID: String, action: String) = {
   let deviceStr = toBase58String(device.bytes)
   let recharge = getExtNumberByKey(rechargeLimitKey)
 
+
+
   if(keyInfo.issuer != this) then throw("Wrong key issuer")
   # else if(keyVersion != version1) then throw("Wrong key version")
   else if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
   else if(deviceNotWhitelistedKey(device, keyID)) then throw("Key not whitelisted")
+  else if(!getExtBoolByKey(device, deviceConnectedKey))then throw("Device not connected")
+  else if(!getExtBoolByKey(device, deviceActiveKey))then throw("Device not active")
   # else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")
   else if(keyTimestampInvalid(keyInfo)) then throw("Key expired")
   else {
