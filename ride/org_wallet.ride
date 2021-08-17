@@ -9,6 +9,9 @@ let supplierKey = "supplier"
 let ownerKey = "owner"
 let keyDevice = 0
 
+let mobileIdWildcard = "*"
+let mobileIdUnset = "?"
+
 ################ utx etc
 
   func getNumberByKey(key: String) = {
@@ -87,18 +90,20 @@ let keyDevice = 0
     }
   }
 
-# {
-#         match (addressFromString(device)){
-#         case t:Address => t
-#         case _ => throw("Not an owner address")
-#         }
-#       }
-
-
   func getOwnerFromKey(asset:Asset)={
     let device = deviceFromKey(asset)
     ownerFromDevice(device)
   }
+
+
+################ mobileid
+  func incorrectMobileId(mid:String)={
+    if(mid==mobileIdUnset)then true
+    else if(mid==mobileIdWildcard)then true
+    else if(mid.size()==0)then true
+    else false
+  }
+
 
 ################ public functions
 
@@ -108,11 +113,14 @@ func verify() = {
 }
 
 @Callable(i)
-func activate() = {
+func activate(id:String) = {
+  # what about id length
+  
   let token = getPaymentSingleToken(i.payments)
-  if(checkTokenActive(token.id)) then {
+  if(incorrectMobileId(id))then throw("Forbidden id string")
+  else if(checkTokenActive(token.id)) then {
     [
-      StringEntry(userKeyFromAddr(i.caller), ACTIVE)
+      StringEntry(userKeyFromAddr(i.caller), id)
     ]
   } else throw("Activation failed, token is inactive")
 }
@@ -125,5 +133,18 @@ func removeKey(key:String) = {
   if(tokenInfo.issuer!=i.caller && devOwner !=i.caller)then throw("Not permitted")
   else{
     [Burn(token,1)]
+  }
+}
+
+@Callable(i)
+func setMobileId(id:String)={
+  # if unset && active member set
+  # else error
+  let actual = userKeyFromAddr(i.caller)
+  if(actual==NONE)then throw("Not a member")
+  else if(incorrectMobileId(id))then throw("Forbidden id string")
+  else if(userKeyFromAddr(i.caller)!=mobileIdUnset)then throw("Cant change existing id")
+  else{
+    [StringEntry(userKeyFromAddr(i.caller),id)]
   }
 }

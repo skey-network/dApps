@@ -3,6 +3,8 @@ import { expect } from 'chai'
 import TestHelper from '../../classes/TestHelper'
 
 const ACTIVE = 'active'
+const TESTID = 'testid'
+const wrongMobileIdsCases = ['?', '*', '']
 
 const Organization = (th: TestHelper) => {
   describe('Organization', () => {
@@ -87,14 +89,17 @@ const Organization = (th: TestHelper) => {
     })
 
     describe('wrong token', () => {
-      it('no access with wrong token', async () => {
+      it('invoke', async () => {
         await th.txFail(
           Transactions.invokeScript(
             {
               dApp: th.Organization.address,
               chainId: th.chainId,
               fee: 500000,
-              call: { function: 'activate', args: [] },
+              call: {
+                function: 'activate',
+                args: [{ type: 'string', value: TESTID }]
+              },
               payment: [{ assetId: th.fakeOrgAccessKey, amount: 1 }]
             },
             th.OrganizationUserByKey.seed
@@ -110,15 +115,51 @@ const Organization = (th: TestHelper) => {
           )
         ).to.eq(undefined)
       })
+    })
 
-      it('added to access list with right key', async () => {
+    wrongMobileIdsCases.forEach((mobileid) => {
+      describe(`right token, wrong mobile id (${mobileid})`, () => {
+        it('invoke', async () => {
+          await th.txFail(
+            Transactions.invokeScript(
+              {
+                dApp: th.Organization.address,
+                chainId: th.chainId,
+                fee: 500000,
+                call: {
+                  function: 'activate',
+                  args: [{ type: 'string', value: mobileid }]
+                },
+                payment: [{ assetId: th.orgAccessKey, amount: 1 }]
+              },
+              th.OrganizationUserByKey.seed
+            ),
+            'Forbidden id string'
+          )
+        })
+        it('not saved in data', async () => {
+          expect(
+            await th.walletValueFor(
+              th.Organization,
+              `user_${th.OrganizationUserByKey.address}`
+            )
+          ).to.eq(undefined)
+        })
+      })
+    })
+
+    describe('right token, right mobile id', () => {
+      it('invoke', async () => {
         await th.txSuccess(
           Transactions.invokeScript(
             {
               dApp: th.Organization.address,
               chainId: th.chainId,
               fee: 500000,
-              call: { function: 'activate', args: [] },
+              call: {
+                function: 'activate',
+                args: [{ type: 'string', value: TESTID }]
+              },
               payment: [{ assetId: th.orgAccessKey, amount: 1 }]
             },
             th.OrganizationUserByKey.seed
@@ -131,7 +172,55 @@ const Organization = (th: TestHelper) => {
             th.Organization,
             `user_${th.OrganizationUserByKey.address}`
           )
-        ).to.eq(ACTIVE)
+        ).to.eq(TESTID)
+      })
+    })
+
+    wrongMobileIdsCases.forEach((mobileid) => {
+      describe(`unset mobile id, set wrong mobile id '${mobileid}'`, () => {
+        before('set user mobileid "?"', async () => {
+          await th.txSuccess(
+            Transactions.data(
+              {
+                data: [
+                  {
+                    key: `user_${th.OrganizationUserByKey.address}`,
+                    value: '?'
+                  }
+                ],
+                chainId: th.chainId,
+                fee: 500000
+              },
+              th.Organization.seed
+            )
+          )
+        })
+        it('invoke', async () => {
+          await th.txFail(
+            Transactions.invokeScript(
+              {
+                dApp: th.Organization.address,
+                chainId: th.chainId,
+                fee: 500000,
+                call: {
+                  function: 'setMobileId',
+                  args: [{ type: 'string', value: mobileid }]
+                },
+                payment: []
+              },
+              th.OrganizationUserByKey.seed
+            ),
+            'Forbidden id string'
+          )
+        })
+        it('not saved in data', async () => {
+          expect(
+            await th.walletValueFor(
+              th.Organization,
+              `user_${th.OrganizationUserByKey.address}`
+            )
+          ).to.eq('?')
+        })
       })
     })
   })
