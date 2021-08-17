@@ -24,6 +24,9 @@ let keyVersionIndex = 2
 let oneMinute = 60000 # in miliseconds
 let version1 = "v1"
 
+let mobileIdWildcard = "*"
+let mobileIdUnset = "?"
+
 
 ################ utx etc
 
@@ -188,9 +191,13 @@ let version1 = "v1"
     if(status != ACTIVE)then throw("Organization not permitted") else true
   }
 
-  func whitelistedByOrganization(org:Address, caller:String)={
-    let status = getExtStrByKey(org,organizationUserKey+caller)
-    if(status != ACTIVE)then throw("Not permitted by organization") else true
+  func whitelistedByOrganization(org:Address, caller:String, mobileId:String)={
+    let definedMobileId = getExtStrByKey(org,organizationUserKey+caller)
+    if(definedMobileId == NONE)then throw("Not permitted by organization")
+    else if(definedMobileId == mobileIdUnset) then throw("Mobile id not set")
+    else if(definedMobileId == mobileIdWildcard) then true
+    else if(definedMobileId != mobileId) then throw("Id mismatch")#+definedMobileId+" "+mobileId)
+    else true
   }
 
 
@@ -245,10 +252,10 @@ func verify() = {
 # - device_counter_{address} +1   # counter incremented with each action, change detected by oracle
 #
 @Callable(i)
-func deviceActionAs(keyID: String, action: String, keyOwner: String) = {
+func deviceActionAs(keyID: String, action: String, keyOwner: String, mobileId:String) = {
   let keyOwnerAddress = addressFromStringValue(keyOwner)
   let hasNoKey = assetBalance(keyOwnerAddress, fromBase58String(keyID)) < 1 # organisation has no key
-  let allowedByKeyOwner = organizationWhitelisted(keyOwner) && whitelistedByOrganization(keyOwnerAddress, toBase58String(i.caller.bytes))
+  let allowedByKeyOwner = organizationWhitelisted(keyOwner) && whitelistedByOrganization(keyOwnerAddress, toBase58String(i.caller.bytes), mobileId)
 
   if (hasNoKey) then throw("Key not owned")
   else if(!allowedByKeyOwner) then throw("Not permitted")
