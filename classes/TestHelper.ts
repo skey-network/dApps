@@ -191,15 +191,14 @@ class TestHelper {
     return tx
   }
 
-  // utx for testing dapp failure
-  public async txFail(
+  public async txFailFullMsg(
     signedTx,
     expectedMessage,
     useSecondNode: boolean = false
   ) {
     const nodeUrl = useSecondNode ? this.secondNodeUrl : this.nodeUrl
 
-    expectedMessage = this._dapp_error_str + expectedMessage
+    // expectedMessage = this._dapp_error_str + expectedMessage
     let message = null
     try {
       let tx = await Transactions.broadcast(signedTx, nodeUrl)
@@ -208,6 +207,16 @@ class TestHelper {
       message = e.message
     }
     expect(message).to.be.eq(expectedMessage)
+  }
+
+  // utx for testing dapp failure
+  public async txFail(
+    signedTx,
+    expectedMessage,
+    useSecondNode: boolean = false
+  ) {
+    expectedMessage = this._dapp_error_str + expectedMessage
+    await this.txFailFullMsg(signedTx, expectedMessage, useSecondNode)
   }
 
   async dappValueFor(key: String, useSecondNode: boolean = false) {
