@@ -8,7 +8,10 @@ const UpdateDeviceData = (th: TestHelper) => {
       await th.txSuccess(
         Transactions.data(
           {
-            data: [{ key: 'test_key_to_rem', value: '40', type: 'string' }],
+            data: [
+              { key: 'test_key_to_rem', value: '40', type: 'string' },
+              { key: 'test_here' }
+            ],
             chainId: th.chainId,
             fee: 500000
           },

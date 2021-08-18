@@ -7,6 +7,7 @@ let ACTIVE = "active"
 let INACTIVE = "inactive"
 let supplierKey = "supplier"
 let ownerKey = "owner"
+let updaterPKKey = "updater_public_key"
 
 ################ utx etc
 
@@ -87,7 +88,8 @@ let ownerKey = "owner"
 
 @Verifier(tx)
 func verify() = {
-    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+    let updaterPK =getStrByKey(updaterPKKey)
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey) || (updaterPK!=NONE && sigVerify(tx.bodyBytes, tx.proofs[0], fromBase58String(updaterPK)))
 }
 
 

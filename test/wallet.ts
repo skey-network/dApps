@@ -27,6 +27,7 @@ import DappUnbansKey from './tests/DappUnbansKey'
 import Organization from './tests/Organization'
 import RemoveKeyFromOrg from './tests/RemoveKeyFromOrg'
 import OpenActiveConnected from './tests/OpenActiveConnected'
+import UpdateDeviceScript from './tests/UpdateDeviceScript'
 
 const wvs = 10 ** 8
 const waves = (wavlets) => wavlets * wvs
@@ -105,6 +106,9 @@ AddDevice(th)
 
 // Updating device data by dapp
 UpdateDeviceData(th)
+
+// Updating device script by dapp
+UpdateDeviceScript(th)
 
 // Adding key by dapp
 DappAddsKeyToDevice(th)
