@@ -1,9 +1,32 @@
+# DappFather
+
+## Data
+
+- refill_amount - amount which triggers refill & sets value of transfer
+- supplier\_`<address>` - address of supplier, value: 'active'
+- org\_`<address>` - address of organization, value: 'active'
+
+<br>
+
+## refill(targetAddrStr:String)
+
+Refills target account if main asset is under specified amount
+
+Params:
+
+- targetAddrStr - address of target
+
+Requirements:
+
+- caller is written as supplier/organization in data
+
 # Supplier
 
 ## Data
 
 - user\_`<address>` - registered user, value: 'active'
 - org\_`<address>` - supported organization, value: 'active'
+- dapp_father - DappFather address, used for account recharge
 
 <br>
 
