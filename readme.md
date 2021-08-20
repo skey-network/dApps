@@ -138,14 +138,14 @@ List of keys
 
 ## Data
 
-- user\_`<address>` - registered user, value: 'active'
+- user\_`<address>` - registered user, value is mobileId, '?' when not set, otherwise device id string or wildcard '\*'
 - token\_`<assetId>` - activation token, value: 'active'/'inactive'
 
 <br>
 
-## activate()
+## activate(id: String)
 
-Activates organization user
+Activates organization user, writes its mobile id
 
 Payments:
 
@@ -154,6 +154,7 @@ Payments:
 Requirements:
 
 - Activation token must be whitelisted
+- mobile id must be string other than '?' and '\*'
 
 ## removeKey(key: String)
 
@@ -166,6 +167,18 @@ Params:
 Requirements:
 
 - Invoked by owner of device or supplier
+
+## setMobileId(id:String)
+
+Sets mobile id if user is added to organization and has no id specified
+
+Params:
+
+- id - id of mobile device
+
+Requirements
+
+- user written in organization with '?' as mobile
 
 # Running tests
 
