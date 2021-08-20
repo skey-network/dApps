@@ -22,7 +22,7 @@ Requirements:
 - Key whitelisted in device's wallet
 - Asset (key) in invoking users wallet
 
-## deviceActionAs(keyID: String, action: String, keyOwner: String)
+## deviceActionAs(keyID: String, action: String, keyOwner: String, mobileId:String)
 
 Makes some action on device using key from provided organization (tries to refill account on success)
 
@@ -31,6 +31,7 @@ Params:
 - keyID - id of nft token
 - action - action to be made
 - keyOwner - organization address
+- mobileId - id of organization user's device
 
 Requirements:
 
@@ -39,6 +40,7 @@ Requirements:
 - Asset (key) in organization's wallet
 - User listed in organization as member
 - Organization listed as supported in suppliers dapp
+- matching & set mobile id in organizaion data or wildcard (\*)
 
 ## transferKey(recipient: String)
 
