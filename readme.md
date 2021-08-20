@@ -1,20 +1,15 @@
-# Main dapp functions
+# Supplier
 
-## addDevice(deviceAddr: String)
+## Data
 
-Adds device if wasn't added before.
+- user\_`<address>` - registered user, value: 'active'
+- org\_`<address>` - supported organization, value: 'active'
 
-Params:
-
-- deviceAddr - address of device to be added
-
-Requirements:
-
-- Must be invoked from dapp wallet.
+<br>
 
 ## deviceAction(keyID: String, action: String)
 
-Makes some action on device
+Makes some action on device (tries to refill account on success)
 
 Params:
 
@@ -23,15 +18,69 @@ Params:
 
 Requirements:
 
-- Key must be whitelisted in device wallet
-- Invoking user wallet must contain this asset
-- Action must be allowed, currently: 'open', 'closed'
+- Valid key (timestamp, issuer)
+- Key whitelisted in device's wallet
+- Asset (key) in invoking users wallet
 
-# Main dapp data
+## deviceActionAs(keyID: String, action: String, keyOwner: String, mobileId:String)
 
-- rechargeLimit - limit for recharge
+Makes some action on device using key from provided organization (tries to refill account on success)
 
-# Device dapp functions
+Params:
+
+- keyID - id of nft token
+- action - action to be made
+- keyOwner - organization address
+- mobileId - id of organization user's device
+
+Requirements:
+
+- Valid key (timestamp, issuer)
+- Key whitelisted in device's wallet
+- Asset (key) in organization's wallet
+- User listed in organization as member
+- Organization listed as supported in suppliers dapp
+- matching & set mobile id in organizaion data or wildcard (\*)
+
+## transferKey(recipient: String)
+
+Transfers key to other user (tries to refill both accounts on success)
+
+Params:
+
+- recipient - address of recipient
+- key as payment - key to send
+
+Requirements:
+
+- Valid key (issuer, timestamp)
+- Key in users wallet
+
+## requestKey(deviceAddr: String, duration: Int)
+
+Creates key for device if possible
+
+Params:
+
+- deviceAddr - address of device
+- duration - time in minutes
+
+Requirements:
+
+- price per minute defined in device
+- user is owner of device
+- payment amount is equal
+
+# Device
+
+## Data
+
+- owner - owner address
+- dapp - main dapp address
+- key\_`<assetId>` - whitelisted key
+- key_price - price per minute (for requestKey in supplier)
+
+<br>
 
 ## addKey(keyID: String)
 
@@ -44,7 +93,7 @@ Params:
 Requirements:
 
 - Invoking wallet must be owner of device or main dapp
-- Only keys issued from dapp are accepted
+- Key issued by suppliers dapp
 
 ## removeKey(keyID: String)
 
@@ -85,10 +134,38 @@ Adds many keys (80 max) in one invoke
 Params:
 List of keys
 
-# Device dapp data
+# Organization
 
-- owner - owner address
-- dapp - main dapp address
+## Data
+
+- user\_`<address>` - registered user, value: 'active'
+- token\_`<assetId>` - activation token, value: 'active'/'inactive'
+
+<br>
+
+## activate()
+
+Activates organization user
+
+Payments:
+
+- activation token
+
+Requirements:
+
+- Activation token must be whitelisted
+
+## removeKey(key: String)
+
+Removes key to device from organization wallet
+
+Params:
+
+- key - id of nft token
+
+Requirements:
+
+- Invoked by owner of device or supplier
 
 # Running tests
 
