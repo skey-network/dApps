@@ -45,6 +45,18 @@ Requirements:
 - Key whitelisted in device's wallet
 - Asset (key) in invoking users wallet
 
+Error messages:
+
+- `Key not owned` - Key not found in user's wallet
+- `Wrong key issuer` - Key issuer is other than supplier
+- `No such device` - There is no such device in supplier's dapp
+- `Key not whitelisted` - Key is not whitelisted in device's data
+- `Device not connected`
+- `Device not active`
+- `Key expired`
+- `Not a device key` - There is no device info in key
+- `Not a key` - There is no asset with given id
+
 ## deviceActionAs(keyID: String, action: String, keyOwner: String, mobileId:String)
 
 Makes some action on device using key from provided organization (tries to refill account on success)
@@ -65,6 +77,22 @@ Requirements:
 - Organization listed as supported in suppliers dapp
 - matching & set mobile id in organizaion data or wildcard (\*)
 
+Error messages:
+
+- `Key not owned` - Key not found in organization wallet
+- `Organization not permitted` - not allowed by supplier dapp
+- `Not permitted by organization` - user not permitted by organization
+- `Mobile id not set` - user mobile id not set in organization
+- `Id mismatch` - user mobile id is different than one in organization
+- `Wrong key issuer` - Key issuer is other than supplier
+- `No such device` - There is no such device in supplier's dapp
+- `Key not whitelisted` - Key is not whitelisted in device's data
+- `Device not connected`
+- `Device not active`
+- `Key expired`
+- `Not a device key` - There is no device info in key
+- `Not a key` - There is no asset with given id
+
 ## transferKey(recipient: String)
 
 Transfers key to other user (tries to refill both accounts on success)
@@ -78,6 +106,12 @@ Requirements:
 
 - Valid key (issuer, timestamp)
 - Key in users wallet
+
+Error messages:
+
+- `wrong assets count` - more or less than one asset provided as payment
+- `wrong asset issuer` - asset issuer is other than supplier
+- `key expired` - timestamp in key description expired
 
 ## requestKey(deviceAddr: String, duration: Int)
 
@@ -93,6 +127,13 @@ Requirements:
 - price per minute defined in device
 - user is owner of device
 - payment amount is equal
+
+Error messages:
+
+- `Owner not specified in device`
+- `Price not specified in device`
+- `Not permitted`- device not owned by user
+- `wrong price`- wrong amount of asset
 
 # Device
 
@@ -118,6 +159,13 @@ Requirements:
 - Invoking wallet must be owner of device or main dapp
 - Key issued by suppliers dapp
 
+Error messages:
+
+- `Wrong key issuer` - Issuer of asset is other than supplier
+- `Not permitted` - user is not a device owne or
+- `This key is banned` - key is banned by user
+- `This key is already assigned`
+
 ## removeKey(keyID: String)
 
 Removes key from device.
@@ -129,6 +177,10 @@ Params:
 Requirements:
 
 - Invoking wallet must be owner of device or main dapp
+
+Error messages:
+
+- `Not permitted` - User is not supplier/owner or key is banned/not added
 
 ## updateData(args:List[String])
 
@@ -150,12 +202,20 @@ list of actions written as string in schema:
   `set#int#counter#1`
   `delete#counter2`
 
+Error messages:
+
+- `Not permitted` - User is not device's supplier
+
 ## addManyKeys(args:List[String])
 
 Adds many keys (80 max) in one invoke
 
 Params:
 List of keys
+
+Error messages:
+
+- `Not permitted` - User is not device's supplier
 
 # Organization
 
@@ -179,6 +239,13 @@ Requirements:
 - Activation token must be whitelisted
 - mobile id must be string other than '?' and '\*'
 
+Error messages:
+
+- `Forbidden id string` - id string cant be `*` or `?`
+- `Activation failed, token is inactive` - asset was deactivated
+- `Wrong payments count` - more or less than 1 paymets attached
+- `Wrong asset` - more or less than 1 paymets attached
+
 ## removeKey(key: String)
 
 Removes key to device from organization wallet
@@ -191,6 +258,14 @@ Requirements:
 
 - Invoked by owner of device or supplier
 
+Error messages:
+
+- `Not a key` - there is no token with given asset id
+- `Not a device key` - asset is not a device key
+- `Not an owner address` - owner address in token is incorrect
+- `Owner not specified in device` - device has no owner address specified
+- `Not permitted` - if invoking user is not supplier/owner of device
+
 ## setMobileId(id:String)
 
 Sets mobile id if user is added to organization and has no id specified
@@ -201,7 +276,13 @@ Params:
 
 Requirements
 
-- user written in organization with '?' as mobile
+- user written in organization with '?' as mobile id
+
+Error messages:
+
+- `Not a member` - organization has no such user
+- `Forbidden id string` - mobile id is forbidden string (`?`/`*`)
+- `Cant change existing id` - id was already set
 
 # Running tests
 
