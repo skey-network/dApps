@@ -191,7 +191,7 @@ list of actions written as string in schema:
 `set#type#key#value`
 
 - set - create new entry/update old one
-- type - type of entry (int/string)
+- type - type of entry (int/string/bool)
 - key - key of entry
 - value - value of entry
   or
