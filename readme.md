@@ -244,7 +244,7 @@ Error messages:
 - `Forbidden id string` - id string cant be `*` or `?`
 - `Activation failed, token is inactive` - asset was deactivated
 - `Wrong payments count` - more or less than 1 paymets attached
-- `Wrong asset` - more or less than 1 paymets attached
+- `Wrong asset` - wrong asset sent as payment
 
 ## removeKey(key: String)
 
