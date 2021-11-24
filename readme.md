@@ -163,7 +163,7 @@ Error messages:
 
 - `Wrong key issuer` - Issuer of asset is other than supplier
 - `Not permitted` - user is not a device owne or
-- `This key is banned` - key is banned by user
+- `This key is banned` - key is banned by supplier
 - `This key is already assigned`
 
 ## removeKey(keyID: String)
