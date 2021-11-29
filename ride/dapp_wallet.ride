@@ -179,14 +179,8 @@ let mobileIdUnset = "?"
   }
 
   func rechargeIfNeeded(account:Address)={
-    # let recharge = getExtNumberByKey(rechargeLimitKey)
     let dappFather = getStrByKey(dappFatherKey)
-    # if(recharge > 0 && wavesBalance(account).regular < recharge && recharge != 0) then {
-      invoke(addressFromStringValue(dappFather), "refill", [toBase58String(account.bytes)], [])!=unit 
-      # ScriptTransfer(account, recharge, unit) :: []
-    # } else {
-      #  false
-    # }
+    invoke(addressFromStringValue(dappFather), "refill", [toBase58String(account.bytes)], [])!=unit 
   }
 
   func organizationWhitelisted(organization:String)={
@@ -268,7 +262,7 @@ func deviceActionAs(keyID: String, action: String, keyOwner: String, mobileId:St
 @Callable(i)
 func deviceAction(keyID: String, action: String) = {
   let keyOwnerAddress = i.caller
-  let hasNoKey = assetBalance(keyOwnerAddress, fromBase58String(keyID)) < 1 # organisation has no key
+  let hasNoKey = assetBalance(keyOwnerAddress, fromBase58String(keyID)) < 1
   
   if (hasNoKey) then throw("Key not owned")
   else deviceActionWithKey(i,keyID, action) 

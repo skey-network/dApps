@@ -112,12 +112,11 @@ func addKey(keyID: String) = {
   # }
 
 
-  # TODO check device in key (will not work with open when there is another dev addr)
+  # optional - check device in key (will not work with open when there is another dev address)
   if(keyInfo.issuer!=supplierAddr)then throw("Wrong key issuer") # accepted only keys issued by supplier
   else if ((ownerAddr!=i.caller) && (supplierAddr!=i.caller)) then throw("Not permitted") # only supplier can add key
   else if (nftValue(keyID) == INACTIVE && supplierAddr!=i.caller) then throw("This key is banned")
   else if (nftValue(keyID) == ACTIVE) then throw("This key is already assigned")
-  #else if (assetBalance(i.caller, fromBase58String(keyID)) < 1) then throw("key is not present in user wallet")
   else{
     [
      StringEntry(nftKey(keyID), ACTIVE)

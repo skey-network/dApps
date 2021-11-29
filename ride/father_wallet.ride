@@ -45,12 +45,12 @@ func refill(targetAddrStr:String) = {
     if(!refill)then {
       ([],false)
     }else{
-    # if user cash is below some level
+    # if user asset balance is below specified level
     ([
       ScriptTransfer(targetAddr,refillAmount, unit)
     ],true)
     }
-  } else ([],false) #throw("supplier not auhorized")
+  } else ([],false)
 
 }
 
