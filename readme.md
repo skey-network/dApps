@@ -188,19 +188,16 @@ Updates data in device wallet.
 
 Params:
 list of actions written as string in schema:
-`set#type#key#value`
+`action#type#key#value`
 
-- set - create new entry/update old one
-- type - type of entry (int/string/bool)
+- action - set (create new/update old entry), delete (remove entry)
+- type - type of entry (int/string/bool), skip for delete
 - key - key of entry
-- value - value of entry
-  or
-  `delete#key`
-- delete - remove entry
-- key - key of entry
-  Eg:
-  `set#int#counter#1`
-  `delete#counter2`
+- value - value of entry, skip for delete
+
+Eg:
+`set#int#counter#1`
+`delete#counter2`
 
 Error messages:
 
