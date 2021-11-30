@@ -34,50 +34,6 @@ const wvs = 10 ** 8
 const waves = (wavlets) => wavlets * wvs
 const wavlets = (waves) => waves / wvs
 
-/** --------------- quick tests area --------------------- */
-// const th = new TestHelper()
-
-// const acc1 = new Account(
-//   '***REMOVED***',
-//   'R'
-// )
-// const acc2 = new Account(
-//   '***REMOVED***',
-//   'R'
-// )
-
-// console.log(acc1.publicKey)
-// //const acc2 = th.createAndLogAccount('acc2')
-
-// // const params = {
-// //   chainId: th.chainId.charCodeAt(0),
-// //   fee: 1000000,
-// //   transfers: [
-// //     { amount: 100000000, recipient: acc1.address },
-// //     { amount: 100000000, recipient: acc2.address }
-// //   ]
-// // }
-// // th.txSuccess(Transactions.massTransfer(params, th.Bank.seed)).then(() => {
-// //   console.log('paid')
-// // })
-
-// // th.deployOrg(acc2.seed).then(() => console.log('setup'))
-
-// th.txSuccess(
-//   Transactions.data(
-//     {
-//       data: [{ key: 'test', value: 'test', type: 'string' }],
-//       senderPublicKey: acc2.publicKey,
-//       chainId: 'R',
-//       fee: '500000'
-//     },
-//     acc1.seed
-//   )
-// ).then(() => console.log('successss'))
-
-// // th.deployOrg(acc2.seed)
-
-/** ------------------ test of dapps ---------------------------*/
 // Setup object  (accounts/prices etc)
 const th = new TestHelper()
 

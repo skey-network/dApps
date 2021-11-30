@@ -7,11 +7,9 @@ import { expect } from 'chai'
 import fetch from 'node-fetch'
 import { TInvokeScriptCallArgument } from '@waves/waves-transactions/dist/transactions'
 import * as fs from 'fs'
-// import util from 'util'
 const HOUR_IN_TS = 3600000
 
-const util = require('util') // as there is problem with imports...
-//const fs = require('fs')
+const util = require('util')
 
 const readFileProm = util.promisify(fs.readFile)
 const writeFileProm = util.promisify(fs.writeFile)
@@ -19,19 +17,12 @@ const writeFileProm = util.promisify(fs.writeFile)
 class TestHelper {
   defaultConfig: any = {
     chainId: process.env.CHAIN,
-    // chainId: 'C',
     nodeUrl: process.env.NODE1,
-    // nodeUrl: 'https://master.testnet.node.smartkeyplatform.io/',
     secondNodeUrl: process.env.NODE2,
-    // secondNodeUrl: 'https://srv-de-2.testnet.node.smartkeyplatform.io/',
     keyPrice: 2000,
     keyDuration: 5,
     rechargeLimit: 50 * 100000,
-    // bankSeed:
-    //   '***REMOVED***'
-    // bankSeed: '***REMOVED***'
     bankSeed: process.env.BANK!
-    //'***REMOVED***'
   }
   config: any = {}
   _execFile = Util.promisify(require('child_process').execFile)
@@ -116,18 +107,8 @@ class TestHelper {
     this.DevOwner = this.createAndLogAccount('DevOwner')
 
     this.DappFather = this.createAndLogAccount('DappFather')
-    this.Dapp = new Account(
-      '***REMOVED*** input',
-      this.chainId,
-      true
-    )
-    // this.Dapp = this.createAndLogAccount('Dapp')
-    console.log('Dapp:', this.Dapp.address)
-    this.Device = new Account(
-      '***REMOVED*** program',
-      this.chainId
-    )
-    // this.Device = this.createAndLogAccount('Device')
+    this.Dapp = this.createAndLogAccount('Dapp')
+    this.Device = this.createAndLogAccount('Device')
     this.KeyOwner = this.createAndLogAccount('KeyOwner')
     this.Dummy = this.createAndLogAccount('Dummy')
     this.Organization = this.createAndLogAccount('Organization')
@@ -219,7 +200,6 @@ class TestHelper {
   ) {
     const nodeUrl = useSecondNode ? this.secondNodeUrl : this.nodeUrl
 
-    // expectedMessage = this._dapp_error_str + expectedMessage
     let message = null
     try {
       let tx = await Transactions.broadcast(signedTx, nodeUrl)
@@ -319,7 +299,7 @@ class TestHelper {
           fee: 500000,
           recipient: to.address
         },
-        from.seed // transfer from dapp as was not transfered to device owner
+        from.seed
       )
     )
   }
