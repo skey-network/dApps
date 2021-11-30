@@ -1,4 +1,4 @@
-{-# STDLIB_VERSION 4 #-}
+{-# STDLIB_VERSION 5 #-}
 {-# CONTENT_TYPE DAPP #-}
 {-# SCRIPT_TYPE ACCOUNT #-}
 
@@ -7,15 +7,26 @@ let BANNED = "banned" # do we need it?
 let ACTIVE = "active"
 let CLOSE = "close"
 let OPEN = "open"
+let deviceActiveKey = "active"
+let deviceConnectedKey = "connected"
 let assetKey = "asset"
 let keyPriceKey = "key_price"
 let ownerKey = "owner"
+let organizationKey = "org_"
+let organizationUserKey = "user_"
 let rechargeLimitKey = "recharge_limit"
-let actions = [OPEN, CLOSE]
+let dappFatherKey = "dapp_father"
+# let actions = [OPEN, CLOSE]
 let deviceInitialCounter = 0
 #let KEY_DAPP=0 - use issuer
-let keyDevice = 0
-let keyValidUntil = 1
+let keyDeviceIndex = 0
+let keyValidUntilIndex = 1
+let keyVersionIndex = 2
+let oneMinute = 60000 # in miliseconds
+let version1 = "v1"
+
+let mobileIdWildcard = "*"
+let mobileIdUnset = "?"
 
 
 ################ utx etc
@@ -42,6 +53,12 @@ let keyValidUntil = 1
     match getString(addr,key){
       case a:String => a
       case _ => NONE
+    }
+  }
+  func getExtBoolByKey(addr: Address, key: String) = {
+    match getBoolean(addr,key){
+      case a:Boolean => a
+      case _ => false
     }
   }
   func getAssetId()={
@@ -85,28 +102,24 @@ let keyValidUntil = 1
     getStrByKey(nftKey(nft))
   }
 
-# ################# device wallet - get owner
-#   # values: "none", address
-#   func getDeviceOwnerAddressValue(addr:Address)={
-#     getExtStrByKey(addr, "owner")
-#   }
-
-
 ################### returns device if key is whitelisted, otherwise none
   func deviceNotWhitelistedKey(device: Address, key: String)={
     let nftId = nftKey(key)
     let valInDevice = getExtStrByKey(device, nftId)
-    if(valInDevice != NONE) then false
-    else true
+    valInDevice != ACTIVE
   }
 
 
   func deviceFromKey(key: Asset)={
-    let device = key.description.split("_")[keyDevice]
+    let device = key.description.split("_")[keyDeviceIndex]
     match (addressFromString(device)){
       case t:Address => t
       case _ => throw("Not a device key")
     }
+  }
+
+   func versionFromKey(key: Asset)={
+    key.description.split("_")[keyVersionIndex]
   }
 
   func getAssetInfo(asset:ByteVector)={
@@ -117,7 +130,7 @@ let keyValidUntil = 1
   }
 
   func keyTimestampInvalid(key:Asset)={
-    let timestamp = parseIntValue(key.description.split("_")[keyValidUntil])
+    let timestamp = parseIntValue(key.description.split("_")[keyValidUntilIndex])
     timestamp < lastBlock.timestamp
   }
 
@@ -165,77 +178,61 @@ let keyValidUntil = 1
     }
   }
 
-  func rechargeIfNeeded(account:Address, rechargeLimit:Int, txes:List[ScriptTransfer])={
-    if(wavesBalance(account).regular < rechargeLimit && rechargeLimit != 0) then {
-      ScriptTransfer(account,rechargeLimit, unit) :: txes
-    }else{
-      txes
-    }
+  func rechargeIfNeeded(account:Address)={
+    let dappFather = getStrByKey(dappFatherKey)
+    invoke(addressFromStringValue(dappFather), "refill", [toBase58String(account.bytes)], [])!=unit 
+  }
+
+  func organizationWhitelisted(organization:String)={
+    let status = getStrByKey(organizationKey+organization)
+    if(status != ACTIVE)then throw("Organization not permitted") else true
+  }
+
+  func whitelistedByOrganization(org:Address, caller:String, mobileId:String)={
+    let definedMobileId = getExtStrByKey(org,organizationUserKey+caller)
+    if(definedMobileId == NONE)then throw("Not permitted by organization")
+    else if(definedMobileId == mobileIdUnset) then throw("Mobile id not set")
+    else if(definedMobileId == mobileIdWildcard) then true
+    else if(definedMobileId != mobileId) then throw("Id mismatch")#+definedMobileId+" "+mobileId)
+    else true
   }
 
 
 ################# utx - checks
   
   # checks if action is on predefined list
-  func notAllowedDeviceAction(action:String)={
-    match (actions.indexOf(action)){
-      case a:Int => false
-      case _ => true
-    }
-  }
+  # func notAllowedDeviceAction(action:String)={
+  #   match (actions.indexOf(action)){
+  #     case a:Int => false
+  #     case _ => true
+  #   }
+  # }
 ################ public functions
 
-@Verifier(tx)
-func verify() = {
-    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
-}
+### open device func
+func deviceActionWithKey(i: Invocation, keyID: String, action: String) = {
+  let keyInfo = getAssetInfo(fromBase58String(keyID))
+  let device = deviceFromKey(keyInfo)
+  # let keyVersion = versionFromKey(keyInfo)
+  let deviceStr = toBase58String(device.bytes)
+  let recharge = getExtNumberByKey(rechargeLimitKey)
 
-### TO REMOVE
-#
-# Write device entries:
-# - device_{address}: "closed"   # desired action of device
-# - device_counter_{address}: 0  # counter of action changes, triggers state change event from oracle
-#
-@Callable(i)
-func addDevice(deviceAddr: String) = {
-  if(i.caller!=this)then throw("Not permitted")
-  else if(deviceActionValue(deviceAddr)!=NONE)then throw("Device already added")
+
+
+  if(keyInfo.issuer != this) then throw("Wrong key issuer")
+  # else if(keyVersion != version1) then throw("Wrong key version")
+  else if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
+  else if(deviceNotWhitelistedKey(device, keyID)) then throw("Key not whitelisted")
+  else if(!getExtBoolByKey(device, deviceConnectedKey))then throw("Device not connected")
+  else if(!getExtBoolByKey(device, deviceActiveKey))then throw("Device not active")
+  # else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")
+  else if(keyTimestampInvalid(keyInfo)) then throw("Key expired")
   else {
-    [
-     StringEntry(deviceActionKey(deviceAddr), CLOSE),
-     IntegerEntry(deviceActionCounterKey(deviceAddr), deviceInitialCounter)
-    ]
-  }
-}
-
-
-### TO REMOVE
-#
-# Write device entries:
-# - user{address}: "active"
-#
-@Callable(i)
-func addUser(deviceAddr: String) = {
-  if(i.caller!=this)then throw("Not permitted")
-  else {
-    [
-      StringEntry(userStatusKey(deviceAddr), ACTIVE)
-    ]
-  }
-}
-
-### TO REMOVE
-#
-# Write device entries:
-# - user{address}: "active"
-#
-@Callable(i)
-func removeUser(deviceAddr: String) = {
-  if(i.caller!=this)then throw("Not permitted")
-  else {
-    [
-      DeleteEntry(userStatusKey(deviceAddr))
-    ]
+    let changes = [
+      StringEntry(deviceActionKey(deviceStr), action),
+      IntegerEntry(deviceActionCounterKey(deviceStr), deviceActionCounterValue(deviceStr) + 1)
+    ] 
+    (changes, rechargeIfNeeded(i.caller))
   }
 }
 
@@ -246,30 +243,29 @@ func removeUser(deviceAddr: String) = {
 # - device_counter_{address} +1   # counter incremented with each action, change detected by oracle
 #
 @Callable(i)
-func deviceAction(keyID: String, action: String) = {
-  let hasNoKey = assetBalance(i.caller, fromBase58String(keyID)) < 1
-  let keyInfo = getAssetInfo(fromBase58String(keyID))
-  let device = deviceFromKey(keyInfo)
-  let deviceStr = toBase58String(device.bytes)
-  # let assetId = getAssetId()
-  let recharge = getExtNumberByKey(rechargeLimitKey)
+func deviceActionAs(keyID: String, action: String, keyOwner: String, mobileId:String) = {
+  let keyOwnerAddress = addressFromStringValue(keyOwner)
+  let hasNoKey = assetBalance(keyOwnerAddress, fromBase58String(keyID)) < 1 # organisation has no key
+  let allowedByKeyOwner = organizationWhitelisted(keyOwner) && whitelistedByOrganization(keyOwnerAddress, toBase58String(i.caller.bytes), mobileId)
 
   if (hasNoKey) then throw("Key not owned")
-  else if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
-  else if(deviceNotWhitelistedKey(device, keyID)) then throw("Key not whitelisted")
-  else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")
-  else if(keyTimestampInvalid(keyInfo)) then throw("Key expired")
-  else {
-    let changes = [
-      StringEntry(deviceActionKey(deviceStr), action),
-      IntegerEntry(deviceActionCounterKey(deviceStr), deviceActionCounterValue(deviceStr) + 1)
-    ]
-    if(wavesBalance(i.caller).regular < recharge && recharge != 0) then {
-      ScriptTransfer(i.caller,recharge, unit) :: changes
-    }else{
-      changes
-    }
-  }
+  else if(!allowedByKeyOwner) then throw("Not permitted")
+  else deviceActionWithKey(i,keyID, action) 
+}
+
+###
+#
+# Updates device entries:
+# - device_{address}: action      # action to be made
+# - device_counter_{address} +1   # counter incremented with each action, change detected by oracle
+#
+@Callable(i)
+func deviceAction(keyID: String, action: String) = {
+  let keyOwnerAddress = i.caller
+  let hasNoKey = assetBalance(keyOwnerAddress, fromBase58String(keyID)) < 1
+  
+  if (hasNoKey) then throw("Key not owned")
+  else deviceActionWithKey(i,keyID, action) 
 }
 
 ###
@@ -279,10 +275,29 @@ func deviceAction(keyID: String, action: String) = {
 @Callable(i)
 func transferKey(recipient: String) ={
   let keyInfo = getAssetInfoFromPayment(i) # throws errors when wrong issuer or key is expired
-  let recharge = getNumberByKey(rechargeLimitKey)
   let recipientAddr = addressFromStringValue(recipient)
   let transfer = ScriptTransfer(recipientAddr,1,keyInfo.id)::[]
-  rechargeIfNeeded(recipientAddr,recharge, # recharge recipient
-    rechargeIfNeeded(i.caller,recharge, transfer) # recharge caller
-  )
+  (transfer, rechargeIfNeeded(recipientAddr) && rechargeIfNeeded(i.caller)) # transfer and recharge if needed
+}
+
+@Callable(i)
+func requestKey(deviceAddr: String, duration: Int) = {
+  let issuedAt=lastBlock.timestamp
+  let validUntil=issuedAt + duration * oneMinute
+  let deviceOwner = ownerFromDevice(addressFromStringValue(deviceAddr))
+  let keyPriceConstant = keyPriceFromDevice(addressFromStringValue(deviceAddr)) # throws if no price is specified
+  let keyPrice = keyPriceConstant * duration
+  let assetId = getAssetId()
+
+  if(toBase58String(i.caller.bytes)!=deviceOwner)then throw("Not permitted")
+  else if(deviceActionKey(deviceAddr)==NONE) then throw("No such device")
+  else if(priceIsWrong(i,assetId,keyPrice))then throw("wrong price")
+  else{
+    let issue = Issue("SmartKey",deviceAddr+"_"+validUntil.toString()+"_"+version1,1,0,false) # timestamp of issue is in token details
+    let newAssetId = calculateAssetId(issue)
+    ([
+      issue,
+      ScriptTransfer(i.caller,1,newAssetId)
+    ], rechargeIfNeeded(i.caller))
+  } 
 }

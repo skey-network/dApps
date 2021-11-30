@@ -3,12 +3,12 @@
 // wrap out script with async function to use fancy async/await syntax
 (async () => {
   // Functions, available in tests, also available here
-  const script = compile(file('device_wallet.ride'))
+  const script = compile(file('father_wallet.ride'))
 
   // You can set env varibles via cli arguments. E.g.: `surfboard run path/to/script  --variables 'dappSeed=seed phrase,secondVariable=200'`
   const dappSeed = env.SEED
   if (dappSeed == null) {
-    throw new Error(`Please provide deviceSedd`)
+    throw new Error(`Please provide dappSedd`)
   }
   //const dappSeed = env.SEED; // Or use seed phrase from surfboard.config.json
   const ssTx = setScript(

@@ -1,0 +1,150 @@
+{-# STDLIB_VERSION 4 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let NONE = "none"
+let ACTIVE = "active"
+let INACTIVE = "inactive"
+let supplierKey = "supplier"
+let ownerKey = "owner"
+let keyDevice = 0
+
+let mobileIdWildcard = "*"
+let mobileIdUnset = "?"
+
+################ utx etc
+
+  func getNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getStrByKey(key: String) = {
+    match getString(this,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+  func getExtNumberByKey(key: String) = {
+    match getInteger(this,key){
+      case a:Int => a
+      case _ => 0
+    }
+  }
+  func getExtStrByKey(addr: Address, key: String) = {
+    match getString(addr,key){
+      case a:String => a
+      case _ => NONE
+    }
+  }
+
+  func userKeyFromAddr(addr: Address) = {
+    "user_" + toBase58String(addr.bytes)
+  }
+
+  func tokenKeyFromAssetId(assetId:ByteVector) = {
+    "token_" + toBase58String(assetId)
+  }
+
+################  token
+
+  func getTokenInfo(asset:ByteVector) = {
+    match (assetInfo(asset)) {
+        case t:Asset => t 
+        case _ => throw("Not a key")
+      }
+  }
+
+  func getPaymentSingleToken(payments: List[AttachedPayment])={
+    if(payments.size() != 1 ) then throw("Wrong payments count")
+    else {
+      match (payments[0].assetId) {
+          case t:ByteVector => getTokenInfo(t)
+          case _ => throw("Wrong asset")
+        }
+    }
+  }
+
+  func checkTokenActive(token:ByteVector)={
+    getStrByKey(tokenKeyFromAssetId(token)) == ACTIVE
+  }
+  
+  func deviceFromKey(key: Asset)={
+    let device = key.description.split("_")[keyDevice]
+    match (addressFromString(device)){
+      case t:Address => t
+      case _ => throw("Not a device key")
+    }
+  }
+  
+  func ownerFromDevice(device: Address)={
+    match(getString(device,ownerKey)){
+      case t:String => {
+        match (addressFromString(t)){
+          case x:Address => x
+          case _ => throw("Not an owner address")
+        }
+      }
+      case _ => throw("Owner not specified in device")
+    }
+  }
+
+  func getOwnerFromKey(asset:Asset)={
+    let device = deviceFromKey(asset)
+    ownerFromDevice(device)
+  }
+
+
+################ mobileid
+  func incorrectMobileId(mid:String)={
+    if(mid==mobileIdUnset)then true
+    else if(mid==mobileIdWildcard)then true
+    else if(mid.size()==0)then true
+    else false
+  }
+
+
+################ public functions
+
+@Verifier(tx)
+func verify() = {
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+}
+
+@Callable(i)
+func activate(id:String) = {
+  # what about id length
+  
+  let token = getPaymentSingleToken(i.payments)
+  if(incorrectMobileId(id))then throw("Forbidden id string")
+  else if(checkTokenActive(token.id)) then {
+    [
+      StringEntry(userKeyFromAddr(i.caller), id)
+    ]
+  } else throw("Activation failed, token is inactive")
+}
+
+@Callable(i)
+func removeKey(key:String) = {
+  let token = fromBase58String(key)
+  let tokenInfo = getTokenInfo(token)
+  let devOwner = getOwnerFromKey(tokenInfo)
+  if(tokenInfo.issuer!=i.caller && devOwner !=i.caller)then throw("Not permitted")
+  else{
+    [Burn(token,1)]
+  }
+}
+
+@Callable(i)
+func setMobileId(id:String)={
+  # if unset && active member set
+  # else error
+  let actual = userKeyFromAddr(i.caller)
+  if(actual==NONE)then throw("Not a member")
+  else if(incorrectMobileId(id))then throw("Forbidden id string")
+  else if(userKeyFromAddr(i.caller)!=mobileIdUnset)then throw("Cant change existing id")
+  else{
+    [StringEntry(userKeyFromAddr(i.caller),id)]
+  }
+}

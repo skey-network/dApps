@@ -4,8 +4,10 @@
 
 let NONE = "none"
 let ACTIVE = "active"
-let dappKey = "dapp"
+let INACTIVE = "inactive"
+let supplierKey = "supplier"
 let ownerKey = "owner"
+let updaterPKKey = "updater_public_key"
 
 ################ utx etc
 
@@ -33,10 +35,10 @@ let ownerKey = "owner"
       case _ => NONE
     }
   }
-################# dapp - user keys/values
+################# supplier - user keys/values
 
 
-################# dapp - device key/nft keys/values
+################# supplier - device key/nft keys/values
   func nftKey(nft:String)={
     "key_"+nft
   }
@@ -63,10 +65,12 @@ let ownerKey = "owner"
   }
 
   
-  func updData(acu:List[StringEntry|IntegerEntry|DeleteEntry],item:String)={
+  func updData(acu:List[StringEntry|IntegerEntry|DeleteEntry|BooleanEntry],item:String)={
     let expl = item.split("#")
     if(expl[0]=="set") then {
-      if(expl[1]=="string") then {
+      if(expl[1]=="bool") then {
+        BooleanEntry(expl[2],(expl[3]=="true"))::acu
+      }else if(expl[1]=="string") then {
         StringEntry(expl[2],expl[3])::acu
       }else{  #if(expl[1]=="int") then {
         IntegerEntry(expl[2],parseIntValue(expl[3]))::acu
@@ -84,7 +88,8 @@ let ownerKey = "owner"
 
 @Verifier(tx)
 func verify() = {
-    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey)
+    let updaterPK =getStrByKey(updaterPKKey)
+    sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey) || (updaterPK!=NONE && sigVerify(tx.bodyBytes, tx.proofs[0], fromBase58String(updaterPK)))
 }
 
 
@@ -97,7 +102,7 @@ func verify() = {
 func addKey(keyID: String) = {
   let callerAddress = toBase58String(i.caller.bytes)
   let keyInfo = getAssetInfo( fromBase58String(keyID))
-  let dappAddr = addressFromStringValue(getStrByKey(dappKey))
+  let supplierAddr = addressFromStringValue(getStrByKey(supplierKey))
   let ownerAddr = addressFromStringValue(getStrByKey(ownerKey))
 
   # let keyIsNotNft = match assetInfo(fromBase58String(keyID)) {
@@ -107,11 +112,11 @@ func addKey(keyID: String) = {
   # }
 
 
-  # TODO check device in key (will not work with open when there is another dev addr)
-  if(keyInfo.issuer!=dappAddr)then throw("Wrong key issuer") # accepted only keys issued by dapp
-  else if (dappAddr!=i.caller) then throw("Not permitted") # only dapp can add key
-  else if (nftValue(keyID) != NONE) then throw("This key is already assigned")
-  #else if (assetBalance(i.caller, fromBase58String(keyID)) < 1) then throw("key is not present in user wallet")
+  # optional - check device in key (will not work with open when there is another dev address)
+  if(keyInfo.issuer!=supplierAddr)then throw("Wrong key issuer") # accepted only keys issued by supplier
+  else if ((ownerAddr!=i.caller) && (supplierAddr!=i.caller)) then throw("Not permitted") # only supplier can add key
+  else if (nftValue(keyID) == INACTIVE && supplierAddr!=i.caller) then throw("This key is banned")
+  else if (nftValue(keyID) == ACTIVE) then throw("This key is already assigned")
   else{
     [
      StringEntry(nftKey(keyID), ACTIVE)
@@ -126,16 +131,18 @@ func addKey(keyID: String) = {
 #
 @Callable(i)
 func removeKey(keyID: String) = {
-  let dappAddr = addressFromStringValue(getStrByKey(dappKey))
+  let supplierAddr = addressFromStringValue(getStrByKey(supplierKey))
   let ownerAddr = addressFromStringValue(getStrByKey(ownerKey))
-
-
-  if (ownerAddr!=i.caller && dappAddr!=i.caller) then throw("Not permitted") # only owner and dapp can remove key
-  else{
-    [
-     DeleteEntry(nftKey(keyID))
-    ]
-  }
+  if(supplierAddr==i.caller) then {                 # supplier bans key
+     [StringEntry(nftKey(keyID),INACTIVE)]
+  } else if (ownerAddr==i.caller) then {        # user can remove not banned key
+     let keyStatus = getStrByKey(nftKey(keyID))
+     if(keyStatus == "active") then {           
+      [DeleteEntry(nftKey(keyID))] # remove key from data
+     } else {
+       throw("Not permitted")
+     }
+  } else throw("Not permitted")
 }
 
 ###
@@ -143,13 +150,13 @@ func removeKey(keyID: String) = {
 # Updates data in device (max 15 entries at time) by item schema: 
 # action#type#key#value
 # actions: set/delete
-# type: string,int
+# type: string,int,bool
 # key: key for data entry
 # value: value for entry (ignored for delete)
 @Callable(i)
 func updateData(args:List[String])={
-  let dappAddr = addressFromStringValue(getStrByKey(dappKey))
-  if(dappAddr != i.caller)then throw("Not permitted")
+  let supplierAddr = addressFromStringValue(getStrByKey(supplierKey))
+  if(supplierAddr != i.caller)then throw("Not permitted")
   else FOLD<15>(args, [], updData)
 }
 
@@ -158,7 +165,7 @@ func updateData(args:List[String])={
 # Adds many keys (max 80 keys at time) by id as string: 
 @Callable(i)
 func addManyKeys(args:List[String])={
-  let dappAddr = addressFromStringValue(getStrByKey(dappKey))
-  if(dappAddr != i.caller)then throw("Not permitted")
+  let supplierAddr = addressFromStringValue(getStrByKey(supplierKey))
+  if(supplierAddr != i.caller)then throw("Not permitted")
   else FOLD<80>(args, [], addKeys)
 }
