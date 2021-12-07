@@ -12,6 +12,21 @@ let keyDevice = 0
 let mobileIdWildcard = "*"
 let mobileIdUnset = "?"
 
+
+################ errors
+
+let ENotAKey = "[E201] Not a key"
+let EWrongPaymentsCount = "[E202] Wrong payments count"
+let EWrongAsset = "[E203] Wrong asset"
+let ENotDeviceKey = "[E204] Not a device key"
+let ENotOwnerAddress = "[E205] Not an owner address"
+let ENoOwnerInDevice = "[E206] Owner not specified in device"
+let EForbiddenIdStr = "[E207] Forbidden id string"
+let EActivationTokenInactive = "[E208] Activation failed, token is inactive"
+let ENotPermitted = "[E209] Not permitted"
+let ENotAMember = "[E210] Not a member"
+let ENoExistingIdChange = "[E211] Cant change existing id"
+
 ################ utx etc
 
   func getNumberByKey(key: String) = {
@@ -52,16 +67,16 @@ let mobileIdUnset = "?"
   func getTokenInfo(asset:ByteVector) = {
     match (assetInfo(asset)) {
         case t:Asset => t 
-        case _ => throw("Not a key")
+        case _ => throw(ENotAKey)
       }
   }
 
   func getPaymentSingleToken(payments: List[AttachedPayment])={
-    if(payments.size() != 1 ) then throw("Wrong payments count")
+    if(payments.size() != 1 ) then throw(EWrongPaymentsCount)
     else {
       match (payments[0].assetId) {
           case t:ByteVector => getTokenInfo(t)
-          case _ => throw("Wrong asset")
+          case _ => throw(EWrongAsset)
         }
     }
   }
@@ -74,7 +89,7 @@ let mobileIdUnset = "?"
     let device = key.description.split("_")[keyDevice]
     match (addressFromString(device)){
       case t:Address => t
-      case _ => throw("Not a device key")
+      case _ => throw(ENotDeviceKey)
     }
   }
   
@@ -83,10 +98,10 @@ let mobileIdUnset = "?"
       case t:String => {
         match (addressFromString(t)){
           case x:Address => x
-          case _ => throw("Not an owner address")
+          case _ => throw(ENotOwnerAddress)
         }
       }
-      case _ => throw("Owner not specified in device")
+      case _ => throw(ENoOwnerInDevice)
     }
   }
 
@@ -117,12 +132,12 @@ func activate(id:String) = {
   # what about id length
   
   let token = getPaymentSingleToken(i.payments)
-  if(incorrectMobileId(id))then throw("Forbidden id string")
+  if(incorrectMobileId(id))then throw(EForbiddenIdStr)
   else if(checkTokenActive(token.id)) then {
     [
       StringEntry(userKeyFromAddr(i.caller), id)
     ]
-  } else throw("Activation failed, token is inactive")
+  } else throw(EActivationTokenInactive)
 }
 
 @Callable(i)
@@ -130,7 +145,7 @@ func removeKey(key:String) = {
   let token = fromBase58String(key)
   let tokenInfo = getTokenInfo(token)
   let devOwner = getOwnerFromKey(tokenInfo)
-  if(tokenInfo.issuer!=i.caller && devOwner !=i.caller)then throw("Not permitted")
+  if(tokenInfo.issuer!=i.caller && devOwner !=i.caller)then throw(ENotPermitted)
   else{
     [Burn(token,1)]
   }
@@ -141,9 +156,9 @@ func setMobileId(id:String)={
   # if unset && active member set
   # else error
   let actual = userKeyFromAddr(i.caller)
-  if(actual==NONE)then throw("Not a member")
-  else if(incorrectMobileId(id))then throw("Forbidden id string")
-  else if(userKeyFromAddr(i.caller)!=mobileIdUnset)then throw("Cant change existing id")
+  if(actual==NONE)then throw(ENotAMember)
+  else if(incorrectMobileId(id))then throw(EForbiddenIdStr)
+  else if(userKeyFromAddr(i.caller)!=mobileIdUnset)then throw(ENoExistingIdChange)
   else{
     [StringEntry(userKeyFromAddr(i.caller),id)]
   }

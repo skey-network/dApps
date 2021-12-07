@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
+import DappsErrors from '../dapps_errors'
 
 const CLOSE = 'close'
 const OPEN = 'open'
@@ -16,7 +17,7 @@ const Close = (th: TestHelper) => {
             { type: 'string', value: th.deviceKey },
             { type: 'string', value: 'close' }
           ]),
-          'Key not owned'
+          DappsErrors.supplier.EKeyNotOwned
         )
       })
 
@@ -36,7 +37,7 @@ const Close = (th: TestHelper) => {
             { type: 'string', value: th.userNft },
             { type: 'string', value: 'close' }
           ]),
-          'Wrong key issuer'
+          DappsErrors.supplier.EWrongKeyIssuer
         )
       })
 

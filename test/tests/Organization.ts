@@ -1,6 +1,7 @@
 import * as Transactions from '@waves/waves-transactions'
 import { expect } from 'chai'
 import TestHelper from '../../classes/TestHelper'
+import DappsErrors from '../dapps_errors'
 
 const ACTIVE = 'active'
 const TESTID = 'testid'
@@ -104,7 +105,7 @@ const Organization = (th: TestHelper) => {
             },
             th.OrganizationUserByKey.seed
           ),
-          'Activation failed, token is inactive'
+          DappsErrors.org.EActivationTokenInactive
         )
       })
       it('not in data', async () => {
@@ -134,7 +135,7 @@ const Organization = (th: TestHelper) => {
               },
               th.OrganizationUserByKey.seed
             ),
-            'Forbidden id string'
+            DappsErrors.org.EForbiddenIdStr
           )
         })
         it('not saved in data', async () => {
@@ -210,7 +211,7 @@ const Organization = (th: TestHelper) => {
               },
               th.OrganizationUserByKey.seed
             ),
-            'Forbidden id string'
+            DappsErrors.org.EForbiddenIdStr
           )
         })
         it('not saved in data', async () => {

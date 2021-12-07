@@ -3,6 +3,7 @@ import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
 import { IInvokeScriptCall } from '@waves/waves-transactions/dist/transactions'
 import { keyPair } from '@waves/ts-lib-crypto'
+import DappsErrors from '../dapps_errors'
 
 const ACTIVE = 'active'
 const INACTIVE = 'inactive'
@@ -37,7 +38,7 @@ const OwnerAddsKeyToDevice = (th: TestHelper) => {
             },
             th.DevOwner.seed
           ),
-          'Wrong key issuer'
+          DappsErrors.device.EWrongKeyIssuer
         )
       })
 
@@ -61,7 +62,7 @@ const OwnerAddsKeyToDevice = (th: TestHelper) => {
             },
             th.Dummy.seed
           ),
-          'Not permitted'
+          DappsErrors.device.ENotPermitted
         )
       })
 
@@ -88,7 +89,7 @@ const OwnerAddsKeyToDevice = (th: TestHelper) => {
             },
             th.DevOwner.seed
           ),
-          'This key is banned'
+          DappsErrors.device.EBannedKey
         )
       })
 

@@ -3,6 +3,7 @@ import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
 import { IInvokeScriptCall } from '@waves/waves-transactions/dist/transactions'
 import { keyPair } from '@waves/ts-lib-crypto'
+import DappsErrors from '../dapps_errors'
 
 const OwnerRequestsKey = (th: TestHelper) => {
   describe('OwnerRequestsKey', () => {
@@ -66,7 +67,8 @@ const OwnerRequestsKey = (th: TestHelper) => {
             },
             th.DevOwner.seed
           ),
-          'wrong payment value, expected ' + th.keyPrice * th.keyDuration
+          DappsErrors.supplier.EWrongPaymentValueExpected +
+            th.keyPrice * th.keyDuration
         )
       })
 
@@ -104,7 +106,7 @@ const OwnerRequestsKey = (th: TestHelper) => {
             },
             th.Dummy.seed
           ),
-          'Not permitted'
+          DappsErrors.supplier.ENotAnOwner
         )
       })
 

@@ -29,6 +29,30 @@ let mobileIdWildcard = "*"
 let mobileIdUnset = "?"
 
 
+################ Errors
+let EKeyNotOwned = "[E1] Key not owned"
+let ENotPermittedByKeyOwner = "[E2] Not permitted by key owner"
+let EWrongKeyIssuer = "[E3] Wrong key issuer"
+let ENoSuchDevice = "[E4] No such device"
+let EKeyNotWhitelisted = "[E5] Key not whitelisted"
+let EDeviceNotConnected = "[E6] Device not connected"
+let EDeviceNotActive = "[E7] Device not active"
+let EKeyExpired = "[E8] Key expired"
+let ENotPermittedByOrg = "[E9] Not permitted by organization"
+let EMobileIdNotSet = "[E10] Mobile id not set"
+let EIdMismatch = "[E11] Id mismatch"
+let EOrgNotPermitted = "[E12] Organization not permitted"
+let ENotAnOwner = "[E13] Not an owner"
+let EWrongPrice = "[E14] Wrong price"
+let EWrongPaymentsCount = "[E15] Wrong payments count"
+let EWrongPaymentOnlyNative = "[E16] Wrong payment - supported only native token"
+let EWrongPaymentValueExpected = "[E17] Wrong payment value, expected "
+let EUnknownAssetId = "[E18] Unknown asset id"
+let ENotAKey = "[E19] Not a key"
+let ENotDeviceKey = "[E20] Not a device key"
+let EPriceNotSpecifiedInDev = "[E21] Price not specified in device"
+let EOwnerNotSpecifiedInDev = "[E22] Owner not specified in device"
+
 ################ utx etc
 
   func getNumberByKey(key: String) = {
@@ -114,7 +138,7 @@ let mobileIdUnset = "?"
     let device = key.description.split("_")[keyDeviceIndex]
     match (addressFromString(device)){
       case t:Address => t
-      case _ => throw("Not a device key")
+      case _ => throw(ENotDeviceKey)
     }
   }
 
@@ -125,7 +149,7 @@ let mobileIdUnset = "?"
   func getAssetInfo(asset:ByteVector)={
     match (assetInfo(asset)) {
         case t:Asset => t 
-        case _ => throw("Not a key")
+        case _ => throw(ENotAKey)
       }
   }
 
@@ -137,14 +161,14 @@ let mobileIdUnset = "?"
   func keyPriceFromDevice(device: Address)={
     match(getInteger(device,keyPriceKey)){
       case t:Int => t
-      case _ => throw("Price not specified in device")
+      case _ => throw(EPriceNotSpecifiedInDev)
     }
   }
 
   func ownerFromDevice(device: Address)={
     match(getString(device,ownerKey)){
       case t:String => t
-      case _ => throw("Owner not specified in device")
+      case _ => throw(EOwnerNotSpecifiedInDev)
     }
   }
 
@@ -152,9 +176,9 @@ let mobileIdUnset = "?"
   # not allowed asset
   # wrong amount
   func priceIsWrong(i:Invocation, assetId:ByteVector, price: Int)={
-    if(i.payments.size() < 1) then throw("wrong payments count")
-    else if(i.payments[0].assetId != unit) then throw("wrong asset, supported only wws")
-    else if(i.payments[0].amount != price) then throw("wrong payment value, expected " + toString(price))
+    if(i.payments.size() < 1) then throw(EWrongPaymentsCount)
+    else if(i.payments[0].assetId != unit) then throw(EWrongPaymentOnlyNative)
+    else if(i.payments[0].amount != price) then throw(EWrongPaymentValueExpected + toString(price))
     else false
   }
 
@@ -162,16 +186,16 @@ let mobileIdUnset = "?"
   func getAssetIdFromAttachedPayment(p:AttachedPayment)={
     match(p.assetId){
       case t:ByteVector => t
-      case _ => throw("Wrong asset")
+      case _ => throw(EUnknownAssetId)
     }
   }
 
   func getAssetInfoFromPayment(i:Invocation)={
-    if(i.payments.size() != 1) then throw("wrong assets count")
+    if(i.payments.size() != 1) then throw(EWrongPaymentsCount)
     else {
       let asset = getAssetInfo(getAssetIdFromAttachedPayment(i.payments[0]))
-      if(asset.issuer != this) then throw("wrong asset issuer")
-      else if(keyTimestampInvalid(asset)) then throw("key expired")
+      if(asset.issuer != this) then throw(EWrongKeyIssuer)
+      else if(keyTimestampInvalid(asset)) then throw(EKeyExpired)
       else{
         asset
       }
@@ -185,15 +209,15 @@ let mobileIdUnset = "?"
 
   func organizationWhitelisted(organization:String)={
     let status = getStrByKey(organizationKey+organization)
-    if(status != ACTIVE)then throw("Organization not permitted") else true
+    if(status != ACTIVE)then throw(EOrgNotPermitted) else true
   }
 
   func whitelistedByOrganization(org:Address, caller:String, mobileId:String)={
     let definedMobileId = getExtStrByKey(org,organizationUserKey+caller)
-    if(definedMobileId == NONE)then throw("Not permitted by organization")
-    else if(definedMobileId == mobileIdUnset) then throw("Mobile id not set")
+    if(definedMobileId == NONE)then throw(ENotPermittedByOrg)
+    else if(definedMobileId == mobileIdUnset) then throw(EMobileIdNotSet)
     else if(definedMobileId == mobileIdWildcard) then true
-    else if(definedMobileId != mobileId) then throw("Id mismatch")#+definedMobileId+" "+mobileId)
+    else if(definedMobileId != mobileId) then throw(EIdMismatch)#+definedMobileId+" "+mobileId)
     else true
   }
 
@@ -219,14 +243,14 @@ func deviceActionWithKey(i: Invocation, keyID: String, action: String) = {
 
 
 
-  if(keyInfo.issuer != this) then throw("Wrong key issuer")
+  if(keyInfo.issuer != this) then throw(EWrongKeyIssuer)
   # else if(keyVersion != version1) then throw("Wrong key version")
-  else if(deviceActionKey(deviceStr)==NONE) then throw("No such device")
-  else if(deviceNotWhitelistedKey(device, keyID)) then throw("Key not whitelisted")
-  else if(!getExtBoolByKey(device, deviceConnectedKey))then throw("Device not connected")
-  else if(!getExtBoolByKey(device, deviceActiveKey))then throw("Device not active")
+  else if(deviceActionKey(deviceStr)==NONE) then throw(ENoSuchDevice)
+  else if(deviceNotWhitelistedKey(device, keyID)) then throw(EKeyNotWhitelisted)
+  else if(!getExtBoolByKey(device, deviceConnectedKey))then throw(EDeviceNotConnected)
+  else if(!getExtBoolByKey(device, deviceActiveKey))then throw(EDeviceNotActive)
   # else if(notAllowedDeviceAction(action)) then throw("Action is not allowed")
-  else if(keyTimestampInvalid(keyInfo)) then throw("Key expired")
+  else if(keyTimestampInvalid(keyInfo)) then throw(EKeyExpired)
   else {
     let changes = [
       StringEntry(deviceActionKey(deviceStr), action),
@@ -248,8 +272,8 @@ func deviceActionAs(keyID: String, action: String, keyOwner: String, mobileId:St
   let hasNoKey = assetBalance(keyOwnerAddress, fromBase58String(keyID)) < 1 # organisation has no key
   let allowedByKeyOwner = organizationWhitelisted(keyOwner) && whitelistedByOrganization(keyOwnerAddress, toBase58String(i.caller.bytes), mobileId)
 
-  if (hasNoKey) then throw("Key not owned")
-  else if(!allowedByKeyOwner) then throw("Not permitted")
+  if (hasNoKey) then throw(EKeyNotOwned)
+  else if(!allowedByKeyOwner) then throw(ENotPermittedByKeyOwner)
   else deviceActionWithKey(i,keyID, action) 
 }
 
@@ -264,7 +288,7 @@ func deviceAction(keyID: String, action: String) = {
   let keyOwnerAddress = i.caller
   let hasNoKey = assetBalance(keyOwnerAddress, fromBase58String(keyID)) < 1
   
-  if (hasNoKey) then throw("Key not owned")
+  if (hasNoKey) then throw(EKeyNotOwned)
   else deviceActionWithKey(i,keyID, action) 
 }
 
@@ -289,9 +313,9 @@ func requestKey(deviceAddr: String, duration: Int) = {
   let keyPrice = keyPriceConstant * duration
   let assetId = getAssetId()
 
-  if(toBase58String(i.caller.bytes)!=deviceOwner)then throw("Not permitted")
-  else if(deviceActionKey(deviceAddr)==NONE) then throw("No such device")
-  else if(priceIsWrong(i,assetId,keyPrice))then throw("wrong price")
+  if(toBase58String(i.caller.bytes)!=deviceOwner)then throw(ENotAnOwner)
+  else if(deviceActionKey(deviceAddr)==NONE) then throw(ENoSuchDevice)
+  else if(priceIsWrong(i,assetId,keyPrice))then throw(EWrongPrice)
   else{
     let issue = Issue("SmartKey",deviceAddr+"_"+validUntil.toString()+"_"+version1,1,0,false) # timestamp of issue is in token details
     let newAssetId = calculateAssetId(issue)
