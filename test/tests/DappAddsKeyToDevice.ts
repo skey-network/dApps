@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
+import DappsErrors from '../dapps_errors'
 
 const ACTIVE = 'active'
 const HOUR_IN_TS = 3600000
@@ -41,7 +42,7 @@ const DappAddsKeyToDevice = (th: TestHelper) => {
             },
             th.Dummy.seed
           ),
-          'Not permitted'
+          DappsErrors.device.ENotPermitted
         )
       })
 
@@ -70,7 +71,7 @@ const DappAddsKeyToDevice = (th: TestHelper) => {
             },
             th.DevOwner.seed
           ),
-          'Wrong key issuer'
+          DappsErrors.device.EWrongKeyIssuer
         )
       })
 
@@ -97,7 +98,7 @@ const DappAddsKeyToDevice = (th: TestHelper) => {
             },
             th.Dummy.seed
           ),
-          'Not permitted'
+          DappsErrors.device.ENotPermitted
         )
       })
 

@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
+import DappsErrors from '../dapps_errors'
 
 const CLOSE = 'close'
 const OPEN = 'open'
@@ -50,7 +51,7 @@ const OpenActiveConnected = (th: TestHelper) => {
             { type: 'string', value: th.deviceKey },
             { type: 'string', value: 'open' }
           ]),
-          'Device not active'
+          DappsErrors.supplier.EDeviceNotActive
         )
       })
 
@@ -91,7 +92,7 @@ const OpenActiveConnected = (th: TestHelper) => {
             { type: 'string', value: th.deviceKey },
             { type: 'string', value: 'open' }
           ]),
-          'Device not connected'
+          DappsErrors.supplier.EDeviceNotConnected
         )
       })
 

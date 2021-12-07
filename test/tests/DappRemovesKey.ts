@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
+import DappsErrors from '../dapps_errors'
 
 const CLOSE = 'close'
 const ACTIVE = 'active'
@@ -24,7 +25,7 @@ const DappRemovesKey = (th: TestHelper) => {
             },
             th.Dummy.seed
           ),
-          'Not permitted'
+          DappsErrors.device.ENotPermitted
         )
       })
 
@@ -82,7 +83,7 @@ const DappRemovesKey = (th: TestHelper) => {
             },
             invoker.seed
           ),
-          'Key not whitelisted'
+          DappsErrors.supplier.EKeyNotWhitelisted
         )
       })
 

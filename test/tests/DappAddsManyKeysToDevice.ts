@@ -5,6 +5,7 @@ import {
   IInvokeScriptCallStringArgument,
   TInvokeScriptCallArgument
 } from '@waves/waves-transactions/dist/transactions'
+import DappsErrors from '../dapps_errors'
 
 const ACTIVE = 'active'
 
@@ -52,7 +53,7 @@ const DappAddsManyKeysToDevice = (th: TestHelper) => {
             },
             th.Dummy.seed
           ),
-          'Not permitted'
+          DappsErrors.device.ENotPermitted
         )
       })
 

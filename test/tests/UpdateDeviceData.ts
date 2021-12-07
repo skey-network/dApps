@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
+import DappsErrors from '../dapps_errors'
 
 const UpdateDeviceData = (th: TestHelper) => {
   describe('UpdateDeviceData', () => {
@@ -45,7 +46,7 @@ const UpdateDeviceData = (th: TestHelper) => {
             },
             th.Dummy.seed
           ),
-          'Not permitted'
+          DappsErrors.device.ENotPermitted
         )
       })
 

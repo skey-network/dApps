@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
+import DappsErrors from '../dapps_errors'
 
 const INACTIVE = 'inactive'
 
@@ -22,7 +23,7 @@ const OwnerRemovesKey = (th: TestHelper) => {
             },
             th.Dummy.seed
           ),
-          'Not permitted'
+          DappsErrors.device.ENotPermitted
         )
       })
 
@@ -75,7 +76,7 @@ const OwnerRemovesKey = (th: TestHelper) => {
             },
             th.DevOwner.seed
           ),
-          'Not permitted'
+          DappsErrors.device.ENotPermitted
         )
       })
 

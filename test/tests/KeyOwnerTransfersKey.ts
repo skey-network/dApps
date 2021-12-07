@@ -3,6 +3,7 @@ import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
 import { IInvokeScriptCall } from '@waves/waves-transactions/dist/transactions'
 import { keyPair } from '@waves/ts-lib-crypto'
+import DappsErrors from '../dapps_errors'
 
 const KeyOwnerTransfersKey = (th: TestHelper) => {
   describe('KeyOwnerTransfersKey', () => {
@@ -40,7 +41,7 @@ const KeyOwnerTransfersKey = (th: TestHelper) => {
             },
             th.DevOwner.seed
           ),
-          'wrong asset issuer'
+          DappsErrors.supplier.EWrongKeyIssuer
         )
       })
 

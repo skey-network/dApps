@@ -47,15 +47,15 @@ Requirements:
 
 Error messages:
 
-- `Key not owned` - Key not found in user's wallet
-- `Wrong key issuer` - Key issuer is other than supplier
-- `No such device` - There is no such device in supplier's dapp
-- `Key not whitelisted` - Key is not whitelisted in device's data
-- `Device not connected`
-- `Device not active`
-- `Key expired`
-- `Not a device key` - There is no device info in key
-- `Not a key` - There is no asset with given id
+- `[E1] Key not owned` - Key not found in user's wallet
+- `[E3] Wrong key issuer` - Key issuer is other than supplier
+- `[E4] No such device` - There is no such device in supplier's dapp
+- `[E5] Key not whitelisted` - Key is not whitelisted in device's data
+- `[E6] Device not connected`
+- `[E7] Device not active`
+- `[E8] Key expired`
+- `[E19] Not a key` - There is no asset with given id
+- `[E20] Not a device key` - There is no device info in key
 
 ## deviceActionAs(keyID: String, action: String, keyOwner: String, mobileId:String)
 
@@ -79,19 +79,19 @@ Requirements:
 
 Error messages:
 
-- `Key not owned` - Key not found in organization wallet
-- `Organization not permitted` - not allowed by supplier dapp
-- `Not permitted by organization` - user not permitted by organization
-- `Mobile id not set` - user mobile id not set in organization
-- `Id mismatch` - user mobile id is different than one in organization
-- `Wrong key issuer` - Key issuer is other than supplier
-- `No such device` - There is no such device in supplier's dapp
-- `Key not whitelisted` - Key is not whitelisted in device's data
-- `Device not connected`
-- `Device not active`
-- `Key expired`
-- `Not a device key` - There is no device info in key
-- `Not a key` - There is no asset with given id
+- `[E1] Key not owned` - Key not found in organization wallet
+- `[E3] Wrong key issuer` - Key issuer is other than supplier
+- `[E4] No such device` - There is no such device in supplier's dapp
+- `[E5] Key not whitelisted` - Key is not whitelisted in device's data
+- `[E6] Device not connected`
+- `[E7] Device not active`
+- `[E8] Key expired`
+- `[E9] Not permitted by organization` - user not permitted by organization
+- `[E10] Mobile id not set` - user mobile id not set in organization
+- `[E11] Id mismatch` - user mobile id is different than one in organization
+- `[E12] Organization not permitted` - not allowed by supplier dapp
+- `[E19] Not a key` - There is no asset with given id
+- `[E20] Not a device key` - There is no device info in key
 
 ## transferKey(recipient: String)
 
@@ -109,9 +109,9 @@ Requirements:
 
 Error messages:
 
-- `wrong assets count` - more or less than one asset provided as payment
-- `wrong asset issuer` - asset issuer is other than supplier
-- `key expired` - timestamp in key description expired
+- `[E3] Wrong key issuerr` - asset issuer is other than supplier
+- `[E8] Key expired` - timestamp in key description expired
+- `[E15] Wrong payments count` - more or less than one asset provided as payment
 
 ## requestKey(deviceAddr: String, duration: Int)
 
@@ -130,10 +130,12 @@ Requirements:
 
 Error messages:
 
-- `Owner not specified in device`
-- `Price not specified in device`
-- `Not permitted`- device not owned by user
-- `wrong price`- wrong amount of asset
+- `[E13] Not an owner`- device not owned by user
+- `[E14] Wrong price`- wrong amount of asset
+- `[E16] Wrong payment - supported only native token`
+- `[E17] Wrong payment value, expected <value>`
+- `[E21] Price not specified in device`
+- `[E22] Owner not specified in device`
 
 # Device
 
@@ -161,10 +163,10 @@ Requirements:
 
 Error messages:
 
-- `Wrong key issuer` - Issuer of asset is other than supplier
-- `Not permitted` - user is not a device owne or
-- `This key is banned` - key is banned by supplier
-- `This key is already assigned`
+- `[E102] Wrong key issuerr` - Issuer of asset is other than supplier
+- `[E103] Not permitted` - user is not a device owne or
+- `[E104] This key is banned` - key is banned by supplier
+- `[E105] This key is already assigned`
 
 ## removeKey(keyID: String)
 
@@ -180,7 +182,7 @@ Requirements:
 
 Error messages:
 
-- `Not permitted` - User is not supplier/owner or key is banned/not added
+- `[E103] Not permitted` - User is not supplier/owner or key is banned/not added
 
 ## updateData(args:List[String])
 
@@ -201,7 +203,7 @@ Eg:
 
 Error messages:
 
-- `Not permitted` - User is not device's supplier
+- `[E103] Not permitted` - User is not device's supplier
 
 ## addManyKeys(args:List[String])
 
@@ -212,7 +214,7 @@ List of keys
 
 Error messages:
 
-- `Not permitted` - User is not device's supplier
+- `[E103] Not permitted` - User is not device's supplier
 
 # Organization
 
@@ -238,10 +240,10 @@ Requirements:
 
 Error messages:
 
-- `Forbidden id string` - id string cant be `*` or `?`
-- `Activation failed, token is inactive` - asset was deactivated
-- `Wrong payments count` - more or less than 1 paymets attached
-- `Wrong asset` - wrong asset sent as payment
+- `[E202] Wrong payments countt` - more or less than 1 paymets attached
+- `[E203] Wrong asset` - wrong asset sent as payment
+- `[E207] Forbidden id string` - id string cant be `*` or `?`
+- `[E208] Activation failed, token is inactivee` - asset was deactivated
 
 ## removeKey(key: String)
 
@@ -257,11 +259,11 @@ Requirements:
 
 Error messages:
 
-- `Not a key` - there is no token with given asset id
-- `Not a device key` - asset is not a device key
-- `Not an owner address` - owner address in token is incorrect
-- `Owner not specified in device` - device has no owner address specified
-- `Not permitted` - if invoking user is not supplier/owner of device
+- `[E201] Not a key"` - there is no token with given asset id
+- `[E204] Not a device key` - asset is not a device key
+- `[E205] Not an owner address` - owner address in token is incorrect
+- `[E206] Owner not specified in device` - device has no owner address specified
+- `[E209] Not permitted` - if invoking user is not supplier/owner of device
 
 ## setMobileId(id:String)
 
@@ -277,9 +279,9 @@ Requirements
 
 Error messages:
 
-- `Not a member` - organization has no such user
-- `Forbidden id string` - mobile id is forbidden string (`?`/`*`)
-- `Cant change existing id` - id was already set
+- `[E207] Forbidden id string` - mobile id is forbidden string (`?`/`*`)
+- `[E210] Not a memberr` - organization has no such user
+- `[E211] Cant change existing id` - id was already set
 
 # Running tests
 
