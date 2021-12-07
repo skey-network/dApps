@@ -2,6 +2,7 @@ import { expect } from 'chai'
 import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
 import { IInvokeScriptCall } from '@waves/waves-transactions/dist/transactions'
+import DappsErrors from '../dapps_errors'
 
 const Open = 'open'
 const Close = 'close'
@@ -53,7 +54,7 @@ const OpenAsOrganization = (th: TestHelper) => {
             },
             invoker.seed
           ),
-          'Organization not permitted'
+          DappsErrors.supplier.EOrgNotPermitted
         )
       })
 
@@ -98,7 +99,7 @@ const OpenAsOrganization = (th: TestHelper) => {
               },
               invoker.seed
             ),
-            'Not permitted by organization'
+            DappsErrors.supplier.ENotPermittedByOrg
           )
         })
 
@@ -167,7 +168,7 @@ const OpenAsOrganization = (th: TestHelper) => {
               },
               invoker.seed
             ),
-            'Id mismatch'
+            DappsErrors.supplier.EIdMismatch
           )
         })
 
@@ -213,7 +214,7 @@ const OpenAsOrganization = (th: TestHelper) => {
               },
               invoker.seed
             ),
-            'Not permitted by organization'
+            DappsErrors.supplier.ENotPermittedByOrg
           )
         })
 
@@ -261,7 +262,7 @@ const OpenAsOrganization = (th: TestHelper) => {
               },
               invoker.seed
             ),
-            'Mobile id not set'
+            DappsErrors.supplier.EMobileIdNotSet
           )
         })
 

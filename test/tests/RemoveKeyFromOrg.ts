@@ -1,6 +1,7 @@
 import { expect } from 'chai'
 import * as Transactions from '@waves/waves-transactions'
 import TestHelper from '../../classes/TestHelper'
+import DappsErrors from '../dapps_errors'
 
 const USE_SECOND_NODE = true
 
@@ -27,7 +28,7 @@ const RemoveKeyFromOrg = (th: TestHelper) => {
             },
             invoker.seed
           ),
-          'Not permitted'
+          DappsErrors.org.ENotPermitted
         )
       })
 
