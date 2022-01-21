@@ -1,0 +1,11 @@
+{-# STDLIB_VERSION 4 #-}
+{-# CONTENT_TYPE EXPRESSION #-}
+let owner = fromBase58String(getStringValue(tx.sender, "owner"))
+let authorized = fromBase58String(getStringValue(tx.sender, "authorised"))
+match tx {
+      case t: InvokeScriptTransaction => 
+        sigVerify(tx.bodyBytes, tx.proofs[0], owner)
+        || (t.function=="deviceAction" && t.payments.size()==0 && sigVerify(tx.bodyBytes, tx.proofs[0], authorized)) # disable ability to transfer key etc by limiting function to 'deviceAction' and disabling payment
+      case _ => 
+        sigVerify(tx.bodyBytes, tx.proofs[0], tx.senderPublicKey) || sigVerify(tx.bodyBytes, tx.proofs[0], owner)
+}

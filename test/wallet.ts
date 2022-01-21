@@ -29,6 +29,7 @@ import RemoveKeyFromOrg from './tests/RemoveKeyFromOrg'
 import UnauthorizedByFather from './tests/UnauthorizedByFather'
 import OpenActiveConnected from './tests/OpenActiveConnected'
 import UpdateDeviceScript from './tests/UpdateDeviceScript'
+import CardTest from './tests/CardTest'
 
 const wvs = 10 ** 8
 const waves = (wavlets) => wavlets * wvs
@@ -110,3 +111,6 @@ RemoveKeyFromOrg(th)
 
 // Unauthorized by dapp father - no recharge
 UnauthorizedByFather(th)
+
+// Test sub account access
+CardTest(th)
