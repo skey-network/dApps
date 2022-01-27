@@ -151,12 +151,21 @@ const CardTest = (th: TestHelper) => {
       })
     })
 
-    // gen key to device
-    // transfer to card
-    // exec as account a and account b
-
-    //problems:
-    // tss can transfer key too...
+    describe('Wallet owner cant do anything', () => {
+      it('no data tx', async () => {
+        await th.txFailFullMsg(
+          Transactions.data(
+            {
+              data: [{ key: 'test', value: 'test' }],
+              chainId: th.chainId,
+              fee: 500000
+            },
+            ctx.card.seed
+          ),
+          'Transaction is not allowed by account-script'
+        )
+      })
+    })
   })
 }
 export default CardTest
