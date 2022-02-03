@@ -38,7 +38,8 @@ const CardTest = (th: TestHelper) => {
           {
             data: [
               { key: 'owner', value: ctx.owner.publicKey },
-              { key: 'authorised', value: ctx.tss.publicKey }
+              { key: 'authorised', value: ctx.tss.publicKey },
+              { key: 'status', value: 'active' }
             ],
             chainId: th.chainId
           },
@@ -63,91 +64,173 @@ const CardTest = (th: TestHelper) => {
     })
 
     describe('authorized', () => {
-      it('deviceAction', async () => {
-        await th.txSuccess(
-          Transactions.invokeScript(
-            {
-              dApp: th.Dapp.address,
-              call: {
-                function: 'deviceAction',
-                args: [
-                  { value: ctx.key, type: 'string' },
-                  { value: 'open', type: 'string' }
-                ]
+      describe('status active', () => {
+        it('deviceAction', async () => {
+          await th.txSuccess(
+            Transactions.invokeScript(
+              {
+                dApp: th.Dapp.address,
+                call: {
+                  function: 'deviceAction',
+                  args: [
+                    { value: ctx.key, type: 'string' },
+                    { value: 'open', type: 'string' }
+                  ]
+                },
+                fee: 900000,
+                chainId: th.chainId,
+                senderPublicKey: ctx.card.publicKey
               },
-              fee: 900000,
-              chainId: th.chainId,
-              senderPublicKey: ctx.card.publicKey
-            },
-            ctx.tss.seed
+              ctx.tss.seed
+            )
           )
-        )
-      })
-      it('failt to transferKey', async () => {
-        await th.txFailFullMsg(
-          Transactions.invokeScript(
-            {
-              dApp: th.Dapp.address,
-              call: {
-                function: 'transferKey',
-                args: [{ value: th.DevOwner.address, type: 'string' }]
+        })
+        it('failt to transferKey', async () => {
+          await th.txFailFullMsg(
+            Transactions.invokeScript(
+              {
+                dApp: th.Dapp.address,
+                call: {
+                  function: 'transferKey',
+                  args: [{ value: th.DevOwner.address, type: 'string' }]
+                },
+                payment: [{ amount: 1, assetId: ctx.key }],
+                chainId: th.chainId,
+                fee: 900000,
+                senderPublicKey: ctx.card.publicKey
               },
-              payment: [{ amount: 1, assetId: ctx.key }],
-              chainId: th.chainId,
-              fee: 900000,
-              senderPublicKey: ctx.card.publicKey
-            },
-            ctx.tss.seed
-          ),
-          'Transaction is not allowed by account-script'
-        )
+              ctx.tss.seed
+            ),
+            'Transaction is not allowed by account-script'
+          )
+        })
+        it('key not transfered', async () => {
+          expect(await th.hasNft(ctx.card, ctx.key)).to.be.true
+        })
       })
-      it('key not transfered', async () => {
-        expect(await th.hasNft(ctx.card, ctx.key)).to.be.true
+      describe('status inactive', () => {
+        before(async () => {
+          await th.txSuccess(
+            Transactions.data(
+              {
+                data: [{ key: 'status', value: 'inactive' }],
+                chainId: th.chainId,
+                senderPublicKey: ctx.card.publicKey,
+                fee: 500000
+              },
+              ctx.owner.seed
+            )
+          )
+        })
+        after(async () => {
+          await th.txSuccess(
+            Transactions.data(
+              {
+                data: [{ key: 'status', value: 'active' }],
+                chainId: th.chainId,
+                senderPublicKey: ctx.card.publicKey,
+                fee: 500000
+              },
+              ctx.owner.seed
+            )
+          )
+        })
+        it('deviceAction', async () => {
+          await th.txFailFullMsg(
+            Transactions.invokeScript(
+              {
+                dApp: th.Dapp.address,
+                call: {
+                  function: 'deviceAction',
+                  args: [
+                    { value: ctx.key, type: 'string' },
+                    { value: 'open', type: 'string' }
+                  ]
+                },
+                fee: 900000,
+                chainId: th.chainId,
+                senderPublicKey: ctx.card.publicKey
+              },
+              ctx.tss.seed
+            ),
+            'Transaction is not allowed by account-script'
+          )
+        })
       })
     })
 
     describe('owner', () => {
-      it('deviceAction', async () => {
-        await th.txSuccess(
-          Transactions.invokeScript(
-            {
-              dApp: th.Dapp.address,
-              call: {
-                function: 'deviceAction',
-                args: [
-                  { value: ctx.key, type: 'string' },
-                  { value: 'open', type: 'string' }
-                ]
+      describe('status inactive', () => {
+        before(async () => {
+          await th.txSuccess(
+            Transactions.data(
+              {
+                data: [{ key: 'status', value: 'inactive' }],
+                chainId: th.chainId,
+                senderPublicKey: ctx.card.publicKey,
+                fee: 500000
               },
-              fee: 900000,
-              chainId: th.chainId,
-              senderPublicKey: ctx.card.publicKey
-            },
-            ctx.owner.seed
+              ctx.owner.seed
+            )
           )
-        )
-      })
-      it('transferKey', async () => {
-        await th.txSuccess(
-          Transactions.invokeScript(
-            {
-              dApp: th.Dapp.address,
-              call: {
-                function: 'transferKey',
-                args: [{ value: th.DevOwner.address, type: 'string' }]
+        })
+        after(async () => {
+          await th.txSuccess(
+            Transactions.data(
+              {
+                data: [{ key: 'status', value: 'active' }],
+                chainId: th.chainId,
+                senderPublicKey: ctx.card.publicKey,
+                fee: 500000
               },
-              payment: [{ amount: 1, assetId: ctx.key }],
-              chainId: th.chainId,
-              fee: 900000,
-              senderPublicKey: ctx.card.publicKey
-            },
-            ctx.owner.seed
+              ctx.owner.seed
+            )
           )
-        )
+        })
+        it('deviceAction', async () => {
+          await th.txSuccess(
+            Transactions.invokeScript(
+              {
+                dApp: th.Dapp.address,
+                call: {
+                  function: 'deviceAction',
+                  args: [
+                    { value: ctx.key, type: 'string' },
+                    { value: 'open', type: 'string' }
+                  ]
+                },
+                fee: 900000,
+                chainId: th.chainId,
+                senderPublicKey: ctx.card.publicKey
+              },
+              ctx.owner.seed
+            )
+          )
+        })
       })
-      it('key transfered', async () => {
-        expect(await th.hasNft(ctx.card, ctx.key)).to.be.false
+
+      describe('status active', () => {
+        it('transferKey', async () => {
+          await th.txSuccess(
+            Transactions.invokeScript(
+              {
+                dApp: th.Dapp.address,
+                call: {
+                  function: 'transferKey',
+                  args: [{ value: th.DevOwner.address, type: 'string' }]
+                },
+                payment: [{ amount: 1, assetId: ctx.key }],
+                chainId: th.chainId,
+                fee: 900000,
+                senderPublicKey: ctx.card.publicKey
+              },
+              ctx.owner.seed
+            )
+          )
+        })
+        it('key transfered', async () => {
+          expect(await th.hasNft(ctx.card, ctx.key)).to.be.false
+        })
       })
     })
 
