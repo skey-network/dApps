@@ -174,6 +174,14 @@ class TestHelper {
     )
   }
 
+  public async deployCard(seed: string) {
+    await this.deploy(seed, 'scripts/card_wallet.deploy.js')
+    this.storeCompiledScript(
+      'card.txt',
+      await this.getScriptFrom(new Account(seed, this.config.chainId).address)
+    )
+  }
+
   async deploy(seed: string, file: string) {
     const dir = __dirname.substr(0, __dirname.length - 7)
     const { stdout } = await this._execFile(
